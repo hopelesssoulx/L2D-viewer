@@ -1,4 +1,5 @@
 import { AnimationControls } from "./animation-controls.js";
+import { getLanguage, setLanguage, t, translatePage, ViewerError } from "./i18n.js";
 import { discoverLocalModels } from "./local-model-source.js";
 import { ModelStrip } from "./model-strip.js";
 import { ModelScene } from "./scene.js";
@@ -33,6 +34,8 @@ const importJSON = $("import-json");
 
 let scene;
 let loadingModels = false;
+let renderLoadReport = () => {};
+let renderJSONStatus = () => {};
 const panel = new ParameterPanel({
   view: $("parameters-view"),
   search: $("parameter-search"),
@@ -53,22 +56,30 @@ const refreshTransform = setupTransformControls(
   transformWindow, () => scene?.placement, (changes) => scene.setPlacement(changes)
 );
 
-function reportLoad(message, errors = []) {
-  report.hidden = !message;
-  $("load-message").textContent = message;
-  dismissReport.hidden = !errors.length;
-  const list = $("load-errors");
-  list.hidden = !errors.length;
-  list.replaceChildren(...errors.map((message) => {
-    const li = document.createElement("li");
-    li.textContent = message;
-    return li;
-  }));
+function reportLoad(key, errors = []) {
+  report.hidden = !key;
+  renderLoadReport = () => {
+    $("load-message").textContent = key ? t(key) : "";
+    dismissReport.hidden = !errors.length;
+    const list = $("load-errors");
+    list.hidden = !errors.length;
+    list.replaceChildren(...errors.map(({ path, model, error }) => {
+      const li = document.createElement("li");
+      const name = path ?? model?.name;
+      const message = error.message ?? String(error);
+      li.textContent = name ? t("assetFailure", { path: name, message }) : message;
+      return li;
+    }));
+  };
+  renderLoadReport();
 }
 
 function setJSONStatus(message, error = false) {
-  jsonStatus.textContent = message;
-  jsonStatus.classList.toggle("error", error);
+  renderJSONStatus = () => {
+    jsonStatus.textContent = message();
+    jsonStatus.classList.toggle("error", error);
+  };
+  renderJSONStatus();
 }
 
 function setInspector(open) {
@@ -98,7 +109,7 @@ function syncPlayback() {
   remove.disabled = loadingModels || !model || busy;
   for (const button of playbackButtons) {
     button.disabled = !model || model.loadingMotion;
-    button.textContent = model?.paused ? "继续" : "暂停";
+    button.textContent = t(model?.paused ? "resume" : "pause");
   }
   toggleInspector.disabled = toggleTransform.disabled = !model;
   if (!model) {
@@ -107,7 +118,7 @@ function syncPlayback() {
   }
 
   const { paused, loadingMotion, loadingExpression } = model;
-  playbackState.textContent = loadingMotion ? "加载动作中" : loadingExpression ? "加载表情中" : paused ? "已暂停" : "实时更新";
+  playbackState.textContent = t(loadingMotion ? "loadingMotion" : loadingExpression ? "loadingExpression" : paused ? "paused" : "updating");
   playbackState.dataset.paused = paused;
   reset.disabled = importJSON.disabled = loadingMotion;
   panel.syncPlayback();
@@ -124,7 +135,7 @@ function updateSelection() {
     setTransform(false);
   } else {
     refreshTransform();
-    setJSONStatus("粘贴参数 JSON 后导入，模型会暂停并应用数值。");
+    setJSONStatus(() => t("jsonHint"));
   }
   syncPlayback();
 }
@@ -142,7 +153,7 @@ function toggleSelection(model) {
 
 function updateModelList() {
   const count = scene.models.length;
-  $("model-count").textContent = `${count} 个模型`;
+  $("model-count").textContent = t(count === 1 ? "oneModel" : "modelCount", { count });
   $("stage-empty").hidden = count > 0;
   strip.render(scene.models, scene.selected);
 }
@@ -150,7 +161,7 @@ function updateModelList() {
 async function importFolder(files) {
   loadingModels = true;
   syncPlayback();
-  reportLoad("正在读取模型文件夹…");
+  reportLoad("loadingModels");
   const errors = [];
   let latest;
   try {
@@ -160,16 +171,16 @@ async function importFolder(files) {
         latest = await scene.add(source);
         updateModelList();
       } catch (error) {
-        errors.push(`${source.path}：${error.message}`);
+        errors.push({ path: source.path, error });
       }
     }
   } catch (error) {
-    errors.push(error.message);
+    errors.push({ error });
   } finally {
     loadingModels = false;
     if (latest) selectModel(latest, true);
     else syncPlayback();
-    reportLoad(errors.length ? "有模型加载失败。" : "", errors);
+    reportLoad(errors.length ? "importFailures" : "", errors);
   }
 }
 
@@ -177,14 +188,14 @@ async function copySelected() {
   const original = scene.selected;
   loadingModels = true;
   syncPlayback();
-  reportLoad("正在复制模型…");
+  reportLoad("copyingModel");
   try {
     const model = await scene.copy(original);
     updateModelList();
     selectModel(model, true);
     reportLoad("");
   } catch (error) {
-    reportLoad("复制模型失败。", [`${original.name}：${error.message}`]);
+    reportLoad("copyFailure", [{ model: original, error }]);
   } finally {
     loadingModels = false;
     syncPlayback();
@@ -210,20 +221,20 @@ function setupPanelToggle(button, close, window, setOpen) {
   });
 }
 
-setupToolbar($("toolbar-dock"), toolbar, $("pin-toolbar"), $("reveal-toolbar"));
+const localizeToolbar = setupToolbar($("toolbar-dock"), toolbar, $("pin-toolbar"), $("reveal-toolbar"));
 function bringForward(panel) {
   inspectorWindow.toggleAttribute("data-front", panel === inspectorWindow);
   transformWindow.toggleAttribute("data-front", panel === transformWindow);
 }
 const revealInspector = setupFloatingPanel(inspectorWindow, bringForward);
 const revealTransform = setupFloatingPanel(transformWindow, bringForward);
-setupTheme($("theme-toggle"));
+const localizeTheme = setupTheme($("theme-toggle"));
 new ResizeObserver(() => {
   if (!transformWindow.hidden) {
     document.documentElement.style.setProperty("--transform-height", `${transformWindow.offsetHeight}px`);
   }
 }).observe(transformWindow);
-setupBackground(stage, $("background-popover"), $("background-input"), $("upload-background"), $("background-status"));
+const localizeBackground = setupBackground(stage, $("background-popover"), $("background-input"), $("upload-background"), $("background-status"));
 setupPanelToggle(toggleInspector, $("close-inspector"), inspectorWindow, setInspector);
 setupPanelToggle(toggleTransform, $("close-transform"), transformWindow, setTransform);
 dismissReport.addEventListener("click", () => { report.hidden = true; });
@@ -231,7 +242,7 @@ dismissReport.addEventListener("click", () => { report.hidden = true; });
 try {
   const pixi = globalThis.PIXI;
   if (!globalThis.Live2DCubismCore || !pixi?.live2d?.Live2DModel) {
-    throw new Error("无法加载渲染依赖，请检查网络后刷新页面。");
+    throw new ViewerError("missingRuntime");
   }
   pixi.live2d.config.sound = false;
   scene = new ModelScene(pixi, stage, toolbar, toggleSelection, (model, changes) => {
@@ -241,7 +252,7 @@ try {
   });
 } catch (error) {
   add.disabled = true;
-  reportLoad("无法启动查看器。", [error.message]);
+  reportLoad("startFailure", [{ error }]);
 }
 
 if (scene) {
@@ -278,15 +289,15 @@ if (scene) {
     jsonInput.value = scene.selected.exportParameters();
     jsonInput.focus();
     jsonInput.select();
-    setJSONStatus("已导出当前姿势参数。可直接复制所选文本。");
+    setJSONStatus(() => t("jsonExported"));
   });
   importJSON.addEventListener("click", () => {
     try {
       const count = scene.selected.importParameters(jsonInput.value);
       syncPlayback();
-      setJSONStatus(`已应用 ${count} 项参数。`);
+      setJSONStatus(() => t("jsonApplied", { count }));
     } catch (error) {
-      setJSONStatus(error.message, true);
+      setJSONStatus(() => error.message, true);
     }
   });
 
@@ -294,3 +305,28 @@ if (scene) {
     if (!inspectorWindow.hidden && scene.selected) panel.refreshValues();
   }, 80);
 }
+
+function localizeViewer() {
+  translatePage();
+  localizeToolbar();
+  localizeTheme();
+  localizeBackground();
+  animation.select();
+  panel.localize();
+  if (scene) {
+    updateModelList();
+    syncPlayback();
+  } else {
+    $("model-count").textContent = t("modelCount", { count: 0 });
+  }
+  renderLoadReport();
+  renderJSONStatus();
+}
+
+const languageSelect = $("language-select");
+languageSelect.value = getLanguage();
+languageSelect.addEventListener("change", () => {
+  setLanguage(languageSelect.value);
+  localizeViewer();
+});
+localizeViewer();

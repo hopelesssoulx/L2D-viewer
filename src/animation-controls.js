@@ -1,3 +1,5 @@
+import { t } from "./i18n.js";
+
 export class AnimationControls {
   #pickers;
   #getModel;
@@ -28,10 +30,10 @@ export class AnimationControls {
     const model = this.#getModel();
     for (const { motion, expression } of this.#pickers) {
       const motions = model?.motions.map(({ label }, index) => new Option(label, index)) ?? [];
-      const prompt = new Option(motions.length ? "选择动作" : "无动作", -1);
+      const prompt = new Option(t(motions.length ? "selectMotion" : "noMotion"), -1);
       prompt.disabled = Boolean(motions.length);
       motion.replaceChildren(prompt, ...motions);
-      expression.replaceChildren(new Option("无表情", -1),
+      expression.replaceChildren(new Option(t("noExpression"), -1),
         ...(model?.expressions.map((label, index) => new Option(label, index)) ?? []));
     }
     this.sync();
@@ -47,7 +49,8 @@ export class AnimationControls {
       expression.value = model?.expressionChoice ?? -1;
       motion.title = motion.selectedOptions[0]?.textContent ?? "";
       expression.title = expression.selectedOptions[0]?.textContent ?? "";
-      error.textContent = [model?.motionError, model?.expressionError].filter(Boolean).join(" ");
+      error.textContent = [model?.motionError, model?.expressionError]
+        .filter(Boolean).map((failure) => failure.message ?? String(failure)).join(" ");
       error.hidden = !error.textContent;
     }
   }

@@ -1,3 +1,5 @@
+import { t } from "./i18n.js";
+
 export function setupToolbar(dock, toolbar, pin, reveal) {
   const popovers = [...toolbar.querySelectorAll("[popovertarget]")].map((trigger) => ({
     trigger,
@@ -5,6 +7,7 @@ export function setupToolbar(dock, toolbar, pin, reveal) {
   }));
   let pinned = true;
   let timer;
+  const localize = () => { pin.title = t(pinned ? "unpinHint" : "pinHint"); };
 
   function expand(expanded) {
     dock.dataset.expanded = expanded;
@@ -53,7 +56,7 @@ export function setupToolbar(dock, toolbar, pin, reveal) {
   pin.addEventListener("click", () => {
     pinned = !pinned;
     pin.setAttribute("aria-pressed", pinned);
-    pin.title = pinned ? "取消固定后，移出功能栏会自动收起" : "开启后，功能栏会保持显示。鼠标移到网页顶边可展开。";
+    localize();
     if (pinned) expand(true);
     else scheduleCollapse();
   });
@@ -77,6 +80,7 @@ export function setupToolbar(dock, toolbar, pin, reveal) {
       expand(false);
     }
   });
+  return localize;
 }
 
 export function setupTheme(button) {
@@ -87,7 +91,7 @@ export function setupTheme(button) {
     const dark = theme === "dark";
     root.dataset.theme = theme;
     button.setAttribute("aria-checked", dark);
-    button.title = dark ? "切换到浅色模式" : "切换到深色模式";
+    button.title = t(dark ? "toLight" : "toDark");
   }
 
   setTheme(root.dataset.theme);
@@ -100,6 +104,7 @@ export function setupTheme(button) {
       // Keep the selection for the current page.
     }
   });
+  return () => setTheme(root.dataset.theme);
 }
 
 export function setupFloatingPanel(panel, bringForward) {
@@ -171,7 +176,7 @@ export function setupBackground(stage, popup, input, upload, status) {
       await image.decode();
     } catch {
       URL.revokeObjectURL(url);
-      if (revision === choice) setStatus("无法读取这张图片。", true);
+      if (revision === choice) setStatus(t("invalidImage"), true);
       return;
     }
 
@@ -182,4 +187,7 @@ export function setupBackground(stage, popup, input, upload, status) {
     setBackground("image", url);
     setStatus(file.name);
   });
+  return () => {
+    if (status.classList.contains("error")) status.textContent = t("invalidImage");
+  };
 }

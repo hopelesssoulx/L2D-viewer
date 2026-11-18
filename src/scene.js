@@ -73,11 +73,13 @@ export class ModelScene {
   #app;
   #highlight;
   #toolbar;
+  #toolbarInset;
   #placements = new WeakMap();
 
   constructor(pixi, host, toolbar, onSelect, onTransform) {
     this.pixi = pixi;
     this.#toolbar = toolbar;
+    this.#toolbarInset = toolbar.offsetHeight + 8;
     this.#app = new pixi.Application({
       autoDensity: true,
       resolution: Math.min(window.devicePixelRatio || 1, 2),
@@ -107,6 +109,7 @@ export class ModelScene {
       const { width, height } = entry.contentRect;
       if (width < 1 || height < 1) return;
       this.#app.renderer.resize(width, height);
+      this.#toolbarInset = this.#toolbar.offsetHeight + 8;
       for (const model of this.models) this.#place(model);
       this.#drawSelection();
     }).observe(host);
@@ -138,11 +141,11 @@ export class ModelScene {
   async copy(model) {
     const placement = { ...this.#placements.get(model) };
     const copy = await model.clone(this.pixi);
-    const baseName = `${model.source.name} 副本`;
-    copy.name = baseName;
-    let number = 2;
-    while (this.models.some((existing) => existing.name === copy.name)) {
-      copy.name = `${baseName} ${number++}`;
+    copy.copyNumber = 1;
+    while (this.models.some((existing) =>
+      existing.source.name === model.source.name && existing.copyNumber === copy.copyNumber
+    )) {
+      copy.copyNumber++;
     }
     return this.#attach(copy, placement);
   }
@@ -188,7 +191,7 @@ export class ModelScene {
     const { width, height } = this.#app.screen;
     const { bounds, x, y, angle, size } = this.#placements.get(model);
     const { display } = model;
-    const top = Math.min(this.#toolbar.offsetHeight + 8, height * 0.32);
+    const top = Math.min(this.#toolbarInset, height * 0.32);
     const margin = Math.min(32, Math.max(14, width * 0.025));
     const scale = Math.min(width * 0.53 / bounds.width, (height - top) * 0.87 / bounds.height);
     display.pivot.set(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);

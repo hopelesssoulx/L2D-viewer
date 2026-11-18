@@ -20,45 +20,49 @@
   <script type="module" src="./src/main.js"></script>
 </head>
 <body>
-  <main id="stage" class="stage" aria-label="模型画布">
+  <main id="stage" class="stage" aria-label="模型画布" data-i18n-aria-label="canvas">
     <div id="stage-empty" class="stage-empty">
       <div class="empty-art" aria-hidden="true"><span></span></div>
-      <h1>导入 Live2D 模型</h1>
-      <p>选择包含 .model3.json 的文件夹<br>可以一次添加多个模型</p>
+      <h1 data-i18n="importModels">导入 Live2D 模型</h1>
+      <p data-i18n="importHint">选择包含 .model3.json 的文件夹，可以一次添加多个模型。</p>
     </div>
   </main>
 
   <header id="toolbar-dock" class="toolbar-dock" data-expanded="true">
     <div id="toolbar" class="toolbar glass">
-      <nav class="tool-row" aria-label="功能栏">
-        <button id="add-models" type="button" class="primary add-models" aria-label="导入文件夹" title="导入文件夹">+</button>
+      <nav class="tool-row" aria-label="功能栏" data-i18n-aria-label="toolbar">
+        <button id="add-models" type="button" class="primary add-models" aria-label="导入文件夹" data-i18n-aria-label="importFolder" title="导入文件夹" data-i18n-title="importFolder">+</button>
         <div id="toolbar-animation" class="animation-controls"></div>
         <div class="model-actions">
-          <button id="toggle-playback" type="button" disabled>暂停</button>
-          <button id="copy-model" type="button" aria-label="复制选中的模型" disabled>复制</button>
-          <button id="remove-model" type="button" aria-label="移除选中的模型" disabled>移除</button>
+          <button id="toggle-playback" type="button" disabled data-i18n="pause">暂停</button>
+          <button id="copy-model" type="button" aria-label="复制选中的模型" data-i18n-aria-label="copyModel" disabled data-i18n="copy">复制</button>
+          <button id="remove-model" type="button" aria-label="移除选中的模型" data-i18n-aria-label="removeModel" disabled data-i18n="remove">移除</button>
         </div>
         <div class="tool-spacer"></div>
         <div class="view-actions">
-          <button id="toggle-inspector" type="button" aria-expanded="false" aria-controls="inspector" disabled>参数<span class="wide-label">检查器</span></button>
-          <button id="toggle-transform" type="button" aria-expanded="false" aria-controls="transform-window" disabled>变换</button>
-          <button id="background-tools" type="button" popovertarget="background-popover">背景</button>
-          <button id="theme-toggle" type="button" class="theme-switch" role="switch" aria-label="深色模式" aria-checked="false">
+          <button id="toggle-inspector" type="button" aria-expanded="false" aria-controls="inspector" disabled aria-label="参数检查器" data-i18n-aria-label="inspector"><span data-i18n="parametersShort">参数</span><span class="wide-label" data-i18n="inspectorSuffix">检查器</span></button>
+          <button id="toggle-transform" type="button" aria-expanded="false" aria-controls="transform-window" disabled data-i18n="transform">变换</button>
+          <button id="background-tools" type="button" popovertarget="background-popover" data-i18n="background" aria-label="画布背景" data-i18n-aria-label="canvasBackground">背景</button>
+          <button id="theme-toggle" type="button" class="theme-switch" role="switch" aria-label="深色模式" data-i18n-aria-label="darkMode" aria-checked="false">
             <svg aria-hidden="true"><use href="./assets/icons.svg#sun"></use></svg>
             <svg aria-hidden="true"><use href="./assets/icons.svg#moon"></use></svg>
           </button>
+          <select id="language-select" class="language-select" aria-label="界面语言" data-i18n-aria-label="language" title="界面语言" data-i18n-title="language">
+            <option value="zh" lang="zh-CN">中文</option>
+            <option value="en" lang="en">English</option>
+          </select>
           <div class="tool-separator" aria-hidden="true"></div>
-          <button id="pin-toolbar" type="button" aria-label="固定功能栏" aria-pressed="true" title="取消固定后，移出功能栏会自动收起">固定</button>
+          <button id="pin-toolbar" type="button" aria-label="固定功能栏" data-i18n-aria-label="pinToolbar" aria-pressed="true" title="取消固定后，移出功能栏会自动收起" data-i18n-title="unpinHint" data-i18n="pin">固定</button>
         </div>
       </nav>
       <div class="model-summary">
         <span id="model-count" class="model-count">0 个模型</span>
         <div class="tool-separator" aria-hidden="true"></div>
-        <div id="model-strip" class="model-strip" role="group" aria-label="模型图层，右侧在上层"></div>
+        <div id="model-strip" class="model-strip" role="group" aria-label="模型图层，右侧在上层" data-i18n-aria-label="layers"></div>
         <span id="playback-state" class="playback-state" hidden></span>
       </div>
     </div>
-    <button id="reveal-toolbar" type="button" class="toolbar-reveal" aria-controls="toolbar" aria-label="展开功能栏" hidden></button>
+    <button id="reveal-toolbar" type="button" class="toolbar-reveal" aria-controls="toolbar" aria-label="展开功能栏" data-i18n-aria-label="showToolbar" hidden></button>
   </header>
 
   <input id="folder-input" type="file" webkitdirectory multiple hidden>
@@ -67,107 +71,107 @@
   <template id="animation-template">
     <div class="animation-motion">
       <label class="animation-field">
-        <span>动作</span>
+        <span data-i18n="motion">动作</span>
         <select data-motion-select></select>
       </label>
-      <button type="button" data-play-motion>（重）播放</button>
+      <button type="button" data-play-motion data-i18n="replay">（重）播放</button>
     </div>
     <label class="animation-field">
-      <span>表情</span>
+      <span data-i18n="expression">表情</span>
       <select data-expression-select></select>
     </label>
     <p class="animation-error error" data-animation-error role="status" hidden></p>
   </template>
 
   <section id="background-popover" class="tool-popover glass" popover="auto" aria-labelledby="background-heading">
-    <h2 id="background-heading">画布背景</h2>
-    <div class="background-swatches" aria-label="预设颜色">
-      <button type="button" data-background="" aria-pressed="true"><span class="swatch theme-swatch"></span>默认</button>
-      <button type="button" data-background="#ffffff" aria-pressed="false"><span class="swatch" style="--swatch: #fff"></span>白色</button>
-      <button type="button" data-background="#d9e6f7" aria-pressed="false"><span class="swatch" style="--swatch: #d9e6f7"></span>雾蓝</button>
-      <button type="button" data-background="#f6e4eb" aria-pressed="false"><span class="swatch" style="--swatch: #f6e4eb"></span>浅粉</button>
-      <button type="button" data-background="#262b39" aria-pressed="false"><span class="swatch" style="--swatch: #262b39"></span>炭黑</button>
-      <button type="button" data-background="#00b140" aria-pressed="false"><span class="swatch" style="--swatch: #00b140"></span>绿幕</button>
+    <h2 id="background-heading" data-i18n="canvasBackground">画布背景</h2>
+    <div class="background-swatches" aria-label="预设颜色" data-i18n-aria-label="backgroundPresets">
+      <button type="button" data-background="" aria-pressed="true"><span class="swatch theme-swatch"></span><span data-i18n="defaultColor">默认</span></button>
+      <button type="button" data-background="#ffffff" aria-pressed="false"><span class="swatch" style="--swatch: #fff"></span><span data-i18n="white">白色</span></button>
+      <button type="button" data-background="#d9e6f7" aria-pressed="false"><span class="swatch" style="--swatch: #d9e6f7"></span><span data-i18n="mistBlue">雾蓝</span></button>
+      <button type="button" data-background="#f6e4eb" aria-pressed="false"><span class="swatch" style="--swatch: #f6e4eb"></span><span data-i18n="lightPink">浅粉</span></button>
+      <button type="button" data-background="#262b39" aria-pressed="false"><span class="swatch" style="--swatch: #262b39"></span><span data-i18n="charcoal">炭黑</span></button>
+      <button type="button" data-background="#00b140" aria-pressed="false"><span class="swatch" style="--swatch: #00b140"></span><span data-i18n="greenScreen">绿幕</span></button>
     </div>
-    <button id="upload-background" type="button" class="background-upload">上传图片</button>
+    <button id="upload-background" type="button" class="background-upload" data-i18n="uploadImage">上传图片</button>
     <p id="background-status" class="inline-message muted" role="status" hidden></p>
   </section>
 
   <aside id="inspector" class="inspector floating-panel glass" aria-labelledby="inspector-heading" hidden>
     <div id="inspector-bar" class="inspector-bar">
-      <h2 id="inspector-heading">参数检查器</h2>
-      <button id="close-inspector" type="button" class="quiet close" aria-label="关闭参数检查器">×</button>
+      <h2 id="inspector-heading" data-i18n="inspector">参数检查器</h2>
+      <button id="close-inspector" type="button" class="quiet close" aria-label="关闭参数检查器" data-i18n-aria-label="closeInspector">×</button>
     </div>
     <div class="inspector-content">
       <div id="inspector-animation" class="animation-controls"></div>
-      <div class="panel-switch" aria-label="检查器面板">
-        <button id="show-parameters" type="button" aria-pressed="true" aria-controls="parameters-view">实时参数</button>
-        <button id="show-json" type="button" aria-pressed="false" aria-controls="json-view">JSON 快照</button>
-        <button id="inspector-playback" type="button" disabled>暂停</button>
-        <button id="reset-parameters" type="button">重置参数</button>
+      <div class="panel-switch" aria-label="检查器面板" data-i18n-aria-label="inspectorPanels">
+        <button id="show-parameters" type="button" aria-pressed="true" aria-controls="parameters-view" data-i18n="liveParameterTab" aria-label="实时参数" data-i18n-aria-label="liveParameters">实时参数</button>
+        <button id="show-json" type="button" aria-pressed="false" aria-controls="json-view" data-i18n="snapshotTab" aria-label="JSON 快照" data-i18n-aria-label="snapshot">JSON 快照</button>
+        <button id="inspector-playback" type="button" disabled data-i18n="pause">暂停</button>
+        <button id="reset-parameters" type="button" data-i18n="resetAll">重置参数</button>
       </div>
-      <section id="parameters-view" class="parameters-view" aria-label="实时参数">
+      <section id="parameters-view" class="parameters-view" aria-label="实时参数" data-i18n-aria-label="liveParameters">
         <div class="parameter-toolbar">
-          <input id="parameter-search" type="search" placeholder="搜索参数 ID" aria-label="搜索参数 ID">
+          <input id="parameter-search" type="search" placeholder="搜索参数 ID" data-i18n-placeholder="findParameter" aria-label="搜索参数 ID" data-i18n-aria-label="findParameter">
           <span id="parameter-count" class="muted"></span>
         </div>
         <p id="parameter-hint" class="parameter-hint muted"></p>
         <div id="parameter-list" class="parameter-list"></div>
       </section>
-      <section id="json-view" class="json-view" aria-label="JSON 快照" hidden>
-        <label for="parameter-json">参数 JSON</label>
+      <section id="json-view" class="json-view" aria-label="JSON 快照" data-i18n-aria-label="snapshot" hidden>
+        <label for="parameter-json" data-i18n="parameterJSON">参数 JSON</label>
         <textarea id="parameter-json" placeholder='{"ParamAngleX": 10}' spellcheck="false"></textarea>
         <div class="json-actions">
-          <button id="export-json" type="button">导出当前参数</button>
-          <button id="import-json" type="button" class="primary">导入 JSON</button>
+          <button id="export-json" type="button" data-i18n="exportJSON">导出当前参数</button>
+          <button id="import-json" type="button" class="primary" data-i18n="importJSON">导入 JSON</button>
         </div>
-        <p id="json-status" class="inline-message muted" role="status">粘贴参数 JSON 后导入，模型会暂停并应用数值。</p>
+        <p id="json-status" class="inline-message muted" role="status" data-i18n="jsonHint">粘贴参数 JSON 后导入，模型会暂停并应用数值。</p>
       </section>
     </div>
   </aside>
 
   <aside id="transform-window" class="transform-window floating-panel glass" aria-labelledby="transform-heading" hidden>
     <div class="inspector-bar">
-      <h2 id="transform-heading">模型变换</h2>
-      <button id="close-transform" type="button" class="quiet close" aria-label="关闭模型变换">×</button>
+      <h2 id="transform-heading" data-i18n="modelTransform">模型变换</h2>
+      <button id="close-transform" type="button" class="quiet close" aria-label="关闭模型变换" data-i18n-aria-label="closeTransform">×</button>
     </div>
     <div class="transform-content">
       <div class="transform-position">
-        <div class="direction-pad" role="group" aria-label="移动方向">
-          <button type="button" class="move-up" aria-label="向上移动" data-axis="y" data-increment="-10">↑</button>
-          <button type="button" class="move-left" aria-label="向左移动" data-axis="x" data-increment="-10">←</button>
-          <button type="button" class="move-down" aria-label="向下移动" data-axis="y" data-increment="10">↓</button>
-          <button type="button" class="move-right" aria-label="向右移动" data-axis="x" data-increment="10">→</button>
+        <div class="direction-pad" role="group" aria-label="移动方向" data-i18n-aria-label="moveDirections">
+          <button type="button" class="move-up" aria-label="向上移动" data-i18n-aria-label="moveUp" data-axis="y" data-increment="-10">↑</button>
+          <button type="button" class="move-left" aria-label="向左移动" data-i18n-aria-label="moveLeft" data-axis="x" data-increment="-10">←</button>
+          <button type="button" class="move-down" aria-label="向下移动" data-i18n-aria-label="moveDown" data-axis="y" data-increment="10">↓</button>
+          <button type="button" class="move-right" aria-label="向右移动" data-i18n-aria-label="moveRight" data-axis="x" data-increment="10">→</button>
         </div>
         <div class="position-fields">
-          <label class="transform-field">X <input type="number" step="any" data-placement-field="x" aria-label="横向位置"><span>px</span></label>
-          <label class="transform-field">Y <input type="number" step="any" data-placement-field="y" aria-label="纵向位置"><span>px</span></label>
-          <button type="button" class="reset-position" data-reset="position" title="重置到展示区左侧">重置位置</button>
+          <label class="transform-field">X <input type="number" step="any" data-placement-field="x" aria-label="横向位置" data-i18n-aria-label="positionX"><span>px</span></label>
+          <label class="transform-field">Y <input type="number" step="any" data-placement-field="y" aria-label="纵向位置" data-i18n-aria-label="positionY"><span>px</span></label>
+          <button type="button" class="reset-position" data-reset="position" title="重置到展示区左侧" data-i18n-title="resetPositionHint" data-i18n="resetPosition">重置位置</button>
         </div>
       </div>
       <div class="transform-line">
-        <button type="button" aria-label="逆时针旋转" data-axis="angle" data-increment="-5">↶</button>
-        <button type="button" aria-label="顺时针旋转" data-axis="angle" data-increment="5">↷</button>
-        <label class="transform-field">角度 <input type="number" step="any" data-placement-field="angle" aria-label="旋转角度"><span>°</span></label>
-        <button type="button" data-reset="rotation">重置旋转</button>
+        <button type="button" aria-label="逆时针旋转" data-i18n-aria-label="rotateLeft" data-axis="angle" data-increment="-5">↶</button>
+        <button type="button" aria-label="顺时针旋转" data-i18n-aria-label="rotateRight" data-axis="angle" data-increment="5">↷</button>
+        <label class="transform-field"><span data-i18n="angle">角度</span> <input type="number" step="any" data-placement-field="angle" aria-label="旋转角度" data-i18n-aria-label="rotationAngle"><span>°</span></label>
+        <button type="button" data-reset="rotation" data-i18n="resetRotation">重置旋转</button>
       </div>
       <div class="transform-line">
-        <button type="button" aria-label="缩小模型" data-axis="size" data-increment="-5" data-step-on-click>−</button>
-        <button type="button" aria-label="放大模型" data-axis="size" data-increment="5" data-step-on-click>+</button>
-        <label class="transform-field">大小 <input type="number" step="any" data-placement-field="size" aria-label="模型大小百分比"><span>%</span></label>
-        <button type="button" data-reset="size">重置大小</button>
+        <button type="button" aria-label="缩小模型" data-i18n-aria-label="shrink" data-axis="size" data-increment="-5" data-step-on-click>−</button>
+        <button type="button" aria-label="放大模型" data-i18n-aria-label="enlarge" data-axis="size" data-increment="5" data-step-on-click>+</button>
+        <label class="transform-field"><span data-i18n="size">大小</span> <input type="number" step="any" data-placement-field="size" aria-label="模型大小百分比" data-i18n-aria-label="sizePercentage"><span>%</span></label>
+        <button type="button" data-reset="size" data-i18n="resetSize">重置大小</button>
       </div>
-      <label class="canvas-control" title="拖动模型移动，在模型上滚动缩放">
-        <span>鼠标操控</span>
+      <label class="canvas-control" title="拖动模型移动，在模型上滚动缩放" data-i18n-title="mouseControlHint">
+        <span data-i18n="mouseControls">鼠标操控</span>
         <input id="canvas-mouse" class="canvas-switch" type="checkbox" role="switch" autocomplete="off">
       </label>
     </div>
   </aside>
 
-  <section id="load-report" class="load-report glass" aria-label="模型加载状态" hidden>
+  <section id="load-report" class="load-report glass" aria-label="模型加载状态" data-i18n-aria-label="loadingStatus" hidden>
     <div class="report-header">
       <p id="load-message" role="status"></p>
-      <button id="dismiss-report" type="button" class="quiet close" aria-label="关闭导入提示" hidden>×</button>
+      <button id="dismiss-report" type="button" class="quiet close" aria-label="关闭导入提示" data-i18n-aria-label="closeLoadingStatus" hidden>×</button>
     </div>
     <ul id="load-errors" hidden></ul>
   </section>

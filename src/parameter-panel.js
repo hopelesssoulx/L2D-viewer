@@ -1,3 +1,6 @@
+import { t } from "./i18n.js";
+import { describeParameter } from "./parameter-descriptions.js";
+
 const formatValue = (value) => String(Number(value.toFixed(5)));
 const svgNamespace = "http://www.w3.org/2000/svg";
 
@@ -21,12 +24,28 @@ export class ParameterPanel {
     this.#rows = (model?.parameters ?? []).map((parameter) => this.#createRow(model, parameter));
     this.list.replaceChildren(...this.#rows.map(({ row }) => row));
     this.list.scrollTop = 0;
+    this.localize();
+  }
+
+  localize() {
+    for (const { parameter, label, limits, slider, number, reset } of this.#rows) {
+      const { id, min, max, defaultValue } = parameter;
+      const description = describeParameter(id, parameter.description);
+      label.title = description;
+      number.setAttribute("aria-description", description);
+      limits.textContent = t("parameterRange", {
+        min: formatValue(min), max: formatValue(max), value: formatValue(defaultValue),
+      });
+      slider.setAttribute("aria-label", t("parameterSlider", { id }));
+      reset.title = t("resetDefault");
+      reset.setAttribute("aria-label", t("parameterReset", { id }));
+    }
     this.#filter();
     this.syncPlayback();
   }
 
   #createRow(model, parameter) {
-    const { id, index, min, max, defaultValue, description } = parameter;
+    const { id, index, min, max } = parameter;
     const row = document.createElement("div");
     row.className = "parameter-row";
 
@@ -34,20 +53,16 @@ export class ParameterPanel {
     header.className = "parameter-header";
     const label = document.createElement("label");
     label.textContent = id;
-    label.title = description;
     const limits = document.createElement("small");
-    limits.textContent = `${formatValue(min)} – ${formatValue(max)} · 默认 ${formatValue(defaultValue)}`;
     header.append(label, limits);
 
     const inputs = document.createElement("div");
     inputs.className = "parameter-inputs";
     const slider = document.createElement("input");
     slider.type = "range";
-    slider.setAttribute("aria-label", `${id} 滑块`);
     const number = document.createElement("input");
     number.type = "number";
     number.id = `parameter-${index}`;
-    number.setAttribute("aria-description", description);
     label.htmlFor = number.id;
 
     for (const input of [slider, number]) {
@@ -71,8 +86,6 @@ export class ParameterPanel {
     const reset = document.createElement("button");
     reset.type = "button";
     reset.className = "parameter-reset";
-    reset.title = "恢复默认值";
-    reset.setAttribute("aria-label", `重置 ${id}`);
     const icon = document.createElementNS(svgNamespace, "svg");
     icon.setAttribute("aria-hidden", "true");
     const symbol = document.createElementNS(svgNamespace, "use");
@@ -86,7 +99,7 @@ export class ParameterPanel {
 
     inputs.append(slider, number, reset);
     row.append(header, inputs);
-    return { row, slider, number, reset, index, matches: true, filterKey: id.toLowerCase() };
+    return { row, parameter, label, limits, slider, number, reset, index, matches: true, filterKey: id.toLowerCase() };
   }
 
   #filter() {
@@ -97,13 +110,14 @@ export class ParameterPanel {
       entry.row.hidden = !entry.matches;
       if (entry.matches) matches++;
     }
-    this.count.textContent = query ? `${matches} / ${this.#rows.length}` : `${matches} 项`;
+    this.count.textContent = query ? `${matches} / ${this.#rows.length}`
+      : t(matches === 1 ? "oneParameter" : "parameterCount", { count: matches });
     this.refreshValues();
   }
 
   syncPlayback() {
     const canEdit = this.#model?.paused && !this.#model.loadingMotion;
-    this.hint.textContent = canEdit ? "拖动滑块或输入数值调整当前姿势。" : "播放时实时更新，暂停后可编辑。";
+    this.hint.textContent = t(canEdit ? "editParameterHint" : "liveParameterHint");
     for (const { slider, number, reset } of this.#rows) {
       slider.disabled = !canEdit;
       number.readOnly = !canEdit;

@@ -1,3 +1,5 @@
+import { t } from "./i18n.js";
+
 export class ModelStrip {
   #host;
   #buttons = new Map();
@@ -65,15 +67,15 @@ export class ModelStrip {
         button.setAttribute("aria-keyshortcuts", "Shift+ArrowLeft Shift+ArrowRight");
         const grip = document.createElement("span");
         grip.className = "model-grip";
-        grip.title = "拖动调整图层";
         grip.setAttribute("aria-hidden", "true");
         const name = document.createElement("span");
         name.className = "model-chip-name";
-        name.textContent = model.name;
         button.append(grip, name);
         this.#buttons.set(model, button);
         this.#models.set(button, model);
       }
+      button.querySelector(".model-grip").title = t("reorderLayer");
+      button.querySelector(".model-chip-name").textContent = model.name;
       button.setAttribute("aria-pressed", model === selected);
       if (this.#host.children[index] !== button) {
         this.#host.insertBefore(button, this.#host.children[index] ?? null);

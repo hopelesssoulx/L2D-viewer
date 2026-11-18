@@ -1,3 +1,5 @@
+import { ViewerError } from "./i18n.js";
+
 function resolvePath(modelPath, reference) {
   if (typeof reference !== "string" || !reference || /^(?:[\\/]|[a-z][a-z\d+.-]*:)/i.test(reference)) {
     return null;
@@ -44,7 +46,7 @@ class LocalModelSource {
     try {
       return JSON.parse(await this.file.text());
     } catch {
-      throw new Error("模型描述文件无法读取，或不是有效的 JSON。");
+      throw new ViewerError("invalidModelJSON");
     }
   }
 
@@ -54,7 +56,7 @@ class LocalModelSource {
 
   fileURL(reference) {
     const file = findFile(this.#filesByPath, this.path, reference);
-    if (!file) throw new Error(`文件夹中缺少模型引用的文件：${reference}`);
+    if (!file) throw new ViewerError("missingModelAsset", { path: reference });
 
     if (!this.#urls.has(file)) this.#urls.set(file, URL.createObjectURL(file));
     return this.#urls.get(file);
@@ -81,9 +83,7 @@ export function discoverLocalModels(files) {
     .map((file) => new LocalModelSource(file, filesByPath));
 
   if (!models.length) {
-    throw new Error(hasLegacyModel
-      ? "检测到旧版 .model.json。请使用包含 .model3.json 的 Cubism 模型。"
-      : "所选文件夹中找不到 .model3.json。");
+    throw new ViewerError(hasLegacyModel ? "oldModelFormat" : "noModelJSON");
   }
   return models;
 }

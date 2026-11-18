@@ -1,35 +1,37 @@
+import { getLanguage, t } from "./i18n.js";
+
 const standardDescriptions = new Map(Object.entries({
-  ParamAngleX: "头部左右转动",
-  ParamAngleY: "头部抬起或低下",
-  ParamAngleZ: "头部向两侧倾斜",
-  ParamEyeLOpen: "左眼睁开程度",
-  ParamEyeROpen: "右眼睁开程度",
-  ParamEyeLSmile: "左眼的笑眼程度",
-  ParamEyeRSmile: "右眼的笑眼程度",
-  ParamEyeBallX: "视线横向位置",
-  ParamEyeBallY: "视线纵向位置",
-  ParamBrowLY: "左眉上下位置",
-  ParamBrowRY: "右眉上下位置",
-  ParamBrowLX: "左眉左右位置",
-  ParamBrowRX: "右眉左右位置",
-  ParamBrowLAngle: "左眉倾斜角度",
-  ParamBrowRAngle: "右眉倾斜角度",
-  ParamBrowLForm: "左眉形状",
-  ParamBrowRForm: "右眉形状",
-  ParamMouthForm: "嘴形变化",
-  ParamMouthOpenY: "张嘴程度",
-  ParamCheek: "脸颊泛红程度",
-  ParamBodyAngleX: "身体左右转动",
-  ParamBodyAngleY: "身体前后倾斜",
-  ParamBodyAngleZ: "身体向两侧倾斜",
-  ParamBreath: "呼吸起伏",
-  ParamHairFront: "前发摆动",
-  ParamHairSide: "侧发摆动",
-  ParamHairBack: "后发摆动",
+  ParamAngleX: ["头部左右转动", "Head turn left or right"],
+  ParamAngleY: ["头部抬起或低下", "Head tilt up or down"],
+  ParamAngleZ: ["头部向两侧倾斜", "Head tilt to either side"],
+  ParamEyeLOpen: ["左眼睁开程度", "Left eye openness"],
+  ParamEyeROpen: ["右眼睁开程度", "Right eye openness"],
+  ParamEyeLSmile: ["左眼的笑眼程度", "Left eye smile"],
+  ParamEyeRSmile: ["右眼的笑眼程度", "Right eye smile"],
+  ParamEyeBallX: ["视线横向位置", "Horizontal gaze"],
+  ParamEyeBallY: ["视线纵向位置", "Vertical gaze"],
+  ParamBrowLY: ["左眉上下位置", "Left eyebrow height"],
+  ParamBrowRY: ["右眉上下位置", "Right eyebrow height"],
+  ParamBrowLX: ["左眉左右位置", "Horizontal left eyebrow position"],
+  ParamBrowRX: ["右眉左右位置", "Horizontal right eyebrow position"],
+  ParamBrowLAngle: ["左眉倾斜角度", "Left eyebrow angle"],
+  ParamBrowRAngle: ["右眉倾斜角度", "Right eyebrow angle"],
+  ParamBrowLForm: ["左眉形状", "Left eyebrow shape"],
+  ParamBrowRForm: ["右眉形状", "Right eyebrow shape"],
+  ParamMouthForm: ["嘴形变化", "Mouth shape"],
+  ParamMouthOpenY: ["张嘴程度", "Mouth openness"],
+  ParamCheek: ["脸颊泛红程度", "Cheek blush"],
+  ParamBodyAngleX: ["身体左右转动", "Body turn left or right"],
+  ParamBodyAngleY: ["身体前后倾斜", "Body lean forward or back"],
+  ParamBodyAngleZ: ["身体向两侧倾斜", "Body tilt to either side"],
+  ParamBreath: ["呼吸起伏", "Breathing"],
+  ParamHairFront: ["前发摆动", "Front hair sway"],
+  ParamHairSide: ["侧发摆动", "Side hair sway"],
+  ParamHairBack: ["后发摆动", "Back hair sway"],
 }));
 
-export function describeParameter(id, modelDescriptions) {
-  return modelDescriptions.get(id) ?? standardDescriptions.get(id) ?? "模型未提供此参数的描述";
+export function describeParameter(id, modelDescription) {
+  return modelDescription ?? standardDescriptions.get(id)?.[getLanguage() === "en" ? 1 : 0] ?? t("noParameterDescription");
 }
 
 export async function readParameterDescriptions(source, reference) {

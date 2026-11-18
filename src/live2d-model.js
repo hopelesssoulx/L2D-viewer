@@ -1,8 +1,9 @@
-import { describeParameter, readParameterDescriptions } from "./parameter-descriptions.js";
+import { t, ViewerError } from "./i18n.js";
+import { readParameterDescriptions } from "./parameter-descriptions.js";
 
 function prepareSettings(json, source, live2d) {
   if (!live2d.Cubism4ModelSettings.isValidJSON(json)) {
-    throw new Error("模型描述文件缺少有效的 Moc 或 Textures 配置。");
+    throw new ViewerError("invalidModelSettings");
   }
 
   // Motion sound paths are optional and this viewer only loads visual assets.
@@ -24,22 +25,22 @@ function readSnapshot(text, parameters) {
   try {
     snapshot = JSON.parse(text);
   } catch {
-    throw new Error("JSON 格式无效。请输入以参数 ID 为键、数值为值的对象。");
+    throw new ViewerError("invalidJSON");
   }
 
   if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
-    throw new Error("请输入 JSON 对象，例如 {\"ParamAngleX\": 10}。");
+    throw new ViewerError("expectedJSONObject");
   }
 
   const entries = Object.entries(snapshot);
-  if (!entries.length) throw new Error("JSON 中没有参数。");
+  if (!entries.length) throw new ViewerError("emptyJSON");
 
   const byId = new Map(parameters.map((parameter) => [parameter.id, parameter]));
   return entries.map(([id, value]) => {
     const parameter = byId.get(id);
-    if (!parameter) throw new Error(`当前模型没有参数 ${id}。`);
+    if (!parameter) throw new ViewerError("unknownParameter", { id });
     if (!Number.isFinite(value) || value < parameter.min || value > parameter.max) {
-      throw new Error(`${id} 必须是 ${parameter.min} 到 ${parameter.max} 之间的数值。`);
+      throw new ViewerError("parameterBounds", { id, min: parameter.min, max: parameter.max });
     }
     return [parameter.index, value];
   });
@@ -65,14 +66,14 @@ export class ViewerModel {
       const textures = await Promise.allSettled(textureURLs.map((url) => pixi.Texture.fromURL(url)));
       const failedTexture = textures.findIndex((result) => result.status === "rejected");
       if (failedTexture !== -1) {
-        throw new Error(`无法读取贴图：${settings.textures[failedTexture]}`);
+        throw new ViewerError("unreadableTexture", { path: settings.textures[failedTexture] });
       }
 
       const failedOptionals = [];
       display.on("poseLoadError", () => failedOptionals.push(settings.pose));
       display.on("physicsLoadError", () => failedOptionals.push(settings.physics));
       await live2d.Live2DFactory.setupLive2DModel(display, settings, options);
-      if (failedOptionals.length) throw new Error(`无法读取模型文件：${failedOptionals.join("、")}`);
+      if (failedOptionals.length) throw new ViewerError("unreadableModelFiles", { paths: failedOptionals.join(", ") });
       return new ViewerModel(display, source, live2d.MotionPriority.FORCE, await descriptions);
     } catch (error) {
       try {
@@ -101,14 +102,14 @@ export class ViewerModel {
   constructor(display, source, motionPriority, descriptions) {
     this.display = display;
     this.source = source;
-    this.name = source.name;
+    this.copyNumber = 0;
     this.paused = false;
     this.loadingMotion = false;
     this.motionChoice = -1;
-    this.motionError = "";
+    this.motionError = null;
     this.loadingExpression = false;
     this.expressionChoice = -1;
-    this.expressionError = "";
+    this.expressionError = null;
     this.#motionPriority = motionPriority;
 
     const internal = display.internalModel;
@@ -119,7 +120,7 @@ export class ViewerModel {
     this.parameters = Array.from(parameters.ids, (id, index) => ({
       id,
       index,
-      description: describeParameter(id, descriptions),
+      description: descriptions.get(id),
       min: parameters.minimumValues[index],
       max: parameters.maximumValues[index],
       defaultValue: parameters.defaultValues[index],
@@ -157,6 +158,12 @@ export class ViewerModel {
       this.#applyExpression(parameters.values);
       this.#values.set(parameters.values);
     });
+  }
+
+  get name() {
+    const name = this.source.name;
+    if (!this.copyNumber) return name;
+    return t(this.copyNumber === 1 ? "modelCopy" : "numberedModelCopy", { name, number: this.copyNumber });
   }
 
   advance(deltaMS) {
@@ -218,7 +225,7 @@ export class ViewerModel {
     try {
       copy.paused = true;
       await copy.setExpression(expressionChoice, { immediate: true });
-      if (copy.expressionError) throw new Error(copy.expressionError);
+      if (copy.expressionError) throw copy.expressionError;
       copy.motionChoice = motionChoice;
       copy.#values.set(values);
       copy.#baseValues.set(baseValues);
@@ -289,16 +296,16 @@ export class ViewerModel {
   async setExpression(index, { immediate = false } = {}) {
     if (this.loadingExpression || index === this.expressionChoice) return;
     this.loadingExpression = true;
-    this.expressionError = "";
+    this.expressionError = null;
     try {
       const expression = index < 0 ? undefined : await this.#expressionManager.loadExpression(index);
-      if (index >= 0 && !expression) throw new Error("无法加载所选表情。");
+      if (index >= 0 && !expression) throw new ViewerError("expressionFailed");
       this.#expression = expression;
       this.expressionChoice = index;
       if (immediate) this.#finishExpressionFade();
       else this.#expressionFade = { layers: new Map(this.#expressionLayers), elapsed: 0 };
     } catch (error) {
-      this.expressionError = error.message;
+      this.expressionError = error;
     } finally {
       this.loadingExpression = false;
     }
@@ -309,16 +316,16 @@ export class ViewerModel {
     if (!motion || this.loadingMotion) return;
     this.loadingMotion = true;
     this.motionChoice = index;
-    this.motionError = "";
+    this.motionError = null;
     try {
       const manager = this.display.internalModel.motionManager;
-      if (!await manager.loadMotion(motion.group, motion.index)) throw new Error("无法加载或播放所选动作。");
+      if (!await manager.loadMotion(motion.group, motion.index)) throw new ViewerError("motionFailed");
       manager.stopAllMotions();
       const started = await this.display.motion(motion.group, motion.index, this.#motionPriority);
-      if (!started) throw new Error("无法加载或播放所选动作。");
+      if (!started) throw new ViewerError("motionFailed");
       this.paused = false;
     } catch (error) {
-      this.motionError = error.message;
+      this.motionError = error;
     } finally {
       this.loadingMotion = false;
     }
