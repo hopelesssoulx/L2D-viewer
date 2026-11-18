@@ -118,8 +118,6 @@ export class ViewerModel {
     this.#previewEntry = new live2d.CubismMotionQueueEntry();
 
     const internal = display.internalModel;
-    internal.breath.setParameters(internal.breath.getParameters()
-      .filter(({ parameterId }) => parameterId === internal.idParamBreath));
     this.#core = internal.coreModel;
     const parameters = this.#core.getModel().parameters;
     this.parameters = Array.from(parameters.ids, (id, index) => ({
@@ -158,6 +156,14 @@ export class ViewerModel {
         })),
       }, definition);
     }
+
+    internal.on("afterMotionUpdate", () => {
+      const clip = this.#activeMotion;
+      // The adapter clears playing on the update after a motion leaves the queue.
+      if (!clip || clip.isLoop() || !internal.motionManager.playing || this.#motionEntry()) return;
+      const duration = clip.getLoopDuration();
+      if (Number.isFinite(duration) && duration > 0) this.#sampleMotion(clip, duration);
+    });
 
     // The adapter restores its motion-only values just after drawing the pose.
     internal.on("beforeModelUpdate", () => {
@@ -333,7 +339,7 @@ export class ViewerModel {
     const motion = this.motions[index];
     if (!motion || this.loadingMotion) return;
     this.loadingMotion = true;
-    if (this.motionChoice >= 0 && this.motionChoice !== index && (this.motionChoice === 0 || index === 0)) {
+    if (this.motionChoice !== index && (this.motionChoice <= 0 || index === 0)) {
       this.loopMotion = index === 0;
     }
     this.motionChoice = index;
@@ -390,9 +396,16 @@ export class ViewerModel {
     }
     const target = Math.min(progress.lastFrame, Math.max(0, Math.round(frame)));
     const time = target === progress.lastFrame ? progress.duration : Math.min(progress.duration, target / progress.fps);
-    const clip = this.#activeMotion;
     this.paused = true;
 
+    this.#sampleMotion(this.#activeMotion, time);
+    this.#core.saveParameters();
+    this.#baseValues.set(this.#core.getModel().parameters.values);
+    this.#applyPose(true);
+    this.#positionMotion(entry, time);
+  }
+
+  #sampleMotion(clip, time) {
     // Preview the authored curves at full weight without advancing the playback queue.
     this.#previewEntry.setStartTime(-time);
     this.#previewEntry.setFadeInStartTime(-Infinity);
@@ -403,10 +416,6 @@ export class ViewerModel {
     } finally {
       clip.setIsLoop(loop);
     }
-    this.#core.saveParameters();
-    this.#baseValues.set(this.#core.getModel().parameters.values);
-    this.#applyPose(true);
-    this.#positionMotion(entry, time);
   }
 
   #positionMotion(entry, time) {

@@ -134,7 +134,6 @@ export class ModelScene {
 
   async add(source) {
     const model = await ViewerModel.load(this.pixi, source);
-    await model.playMotion(0);
     model.display.internalModel.coreModel.update();
     return this.#attach(model, { bounds: measureModel(model.display), x: 0, y: 0, angle: 0, size: 100 });
   }
