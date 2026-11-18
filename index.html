@@ -111,10 +111,11 @@
     <div class="inspector-content">
       <div id="inspector-animation" class="animation-controls"></div>
       <div class="panel-switch" aria-label="检查器面板" data-i18n-aria-label="inspectorPanels">
-        <button id="show-parameters" type="button" aria-pressed="true" aria-controls="parameters-view" data-i18n="liveParameterTab" aria-label="实时参数" data-i18n-aria-label="liveParameters">实时参数</button>
+        <button id="show-parameters" type="button" aria-pressed="true" aria-controls="parameters-view" data-i18n="motionParameterTab" aria-label="动作参数" data-i18n-aria-label="motionParameters">动作参数</button>
+        <button id="show-expression-parameters" type="button" aria-pressed="false" aria-controls="parameters-view" data-i18n="expressionParameterTab" aria-label="表情参数" data-i18n-aria-label="expressionParameters">表情参数</button>
         <button id="show-json" type="button" aria-pressed="false" aria-controls="json-view" data-i18n="snapshotTab" aria-label="JSON 快照" data-i18n-aria-label="snapshot">JSON 快照</button>
         <button id="inspector-playback" type="button" disabled data-i18n="pause">暂停</button>
-        <button id="reset-parameters" type="button" data-i18n="resetAll">重置参数</button>
+        <button id="reset-parameters" type="button" data-i18n="resetAll">重置全部参数</button>
       </div>
       <section id="parameters-view" class="parameters-view" aria-label="实时参数" data-i18n-aria-label="liveParameters">
         <div class="parameter-toolbar">

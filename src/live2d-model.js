@@ -1,5 +1,6 @@
 import { t, ViewerError } from "./i18n.js";
 import { readParameterDescriptions } from "./parameter-descriptions.js";
+import { readParameterGroups } from "./parameter-groups.js";
 
 function prepareSettings(json, source, live2d) {
   if (!live2d.Cubism4ModelSettings.isValidJSON(json)) {
@@ -33,8 +34,6 @@ function readSnapshot(text, parameters) {
   }
 
   const entries = Object.entries(snapshot);
-  if (!entries.length) throw new ViewerError("emptyJSON");
-
   const byId = new Map(parameters.map((parameter) => [parameter.id, parameter]));
   return entries.map(([id, value]) => {
     const parameter = byId.get(id);
@@ -60,6 +59,7 @@ export class ViewerModel {
       const modelJSON = await source.readSettings();
       const settings = prepareSettings(modelJSON, source, live2d);
       const descriptions = readParameterDescriptions(source, modelJSON.FileReferences.DisplayInfo);
+      const groups = readParameterGroups(settings);
       textureURLs = settings.textures.map((reference) => settings.resolveURL(reference));
 
       // Complete texture requests before the adapter starts decoding the moc.
@@ -74,7 +74,7 @@ export class ViewerModel {
       display.on("physicsLoadError", () => failedOptionals.push(settings.physics));
       await live2d.Live2DFactory.setupLive2DModel(display, settings, options);
       if (failedOptionals.length) throw new ViewerError("unreadableModelFiles", { paths: failedOptionals.join(", ") });
-      return new ViewerModel(display, source, live2d.MotionPriority.FORCE, await descriptions);
+      return new ViewerModel(display, source, live2d.MotionPriority.FORCE, await descriptions, await groups);
     } catch (error) {
       try {
         if (display.internalModel) display.destroy();
@@ -100,7 +100,7 @@ export class ViewerModel {
   #expressionLayers = new Map();
   #blendedValues;
 
-  constructor(display, source, motionPriority, descriptions) {
+  constructor(display, source, motionPriority, descriptions, groups) {
     this.display = display;
     this.source = source;
     this.copyNumber = 0;
@@ -123,6 +123,8 @@ export class ViewerModel {
       id,
       index,
       description: descriptions.get(id),
+      motion: groups.motion.has(id) || !groups.expression.has(id),
+      expression: groups.expression.has(id),
       min: parameters.minimumValues[index],
       max: parameters.maximumValues[index],
       defaultValue: parameters.defaultValues[index],
@@ -265,9 +267,8 @@ export class ViewerModel {
   }
 
   exportParameters() {
-    return JSON.stringify(Object.fromEntries(
-      this.parameters.map(({ id, index }) => [id, this.#values[index]])
-    ), null, 2);
+    const changed = this.parameters.filter(({ index, defaultValue }) => this.#values[index] !== defaultValue);
+    return JSON.stringify(Object.fromEntries(changed.map(({ id, index }) => [id, this.#values[index]])), null, 2);
   }
 
   importParameters(text) {
@@ -318,6 +319,9 @@ export class ViewerModel {
     const motion = this.motions[index];
     if (!motion || this.loadingMotion) return;
     this.loadingMotion = true;
+    if (this.motionChoice >= 0 && this.motionChoice !== index && (this.motionChoice === 0 || index === 0)) {
+      this.loopMotion = index === 0;
+    }
     this.motionChoice = index;
     this.motionError = null;
     try {

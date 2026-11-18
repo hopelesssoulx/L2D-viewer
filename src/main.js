@@ -25,6 +25,7 @@ const copy = $("copy-model");
 const remove = $("remove-model");
 const playbackState = $("playback-state");
 const showParameters = $("show-parameters");
+const showExpressionParameters = $("show-expression-parameters");
 const showJSON = $("show-json");
 const jsonView = $("json-view");
 const jsonInput = $("parameter-json");
@@ -202,12 +203,14 @@ async function copySelected() {
   }
 }
 
-function setPanel(showSnapshot) {
-  showParameters.setAttribute("aria-pressed", !showSnapshot);
+function setPanel(category) {
+  const showSnapshot = category === "snapshot";
+  showParameters.setAttribute("aria-pressed", category === "motion");
+  showExpressionParameters.setAttribute("aria-pressed", category === "expression");
   showJSON.setAttribute("aria-pressed", showSnapshot);
   panel.view.hidden = showSnapshot;
   jsonView.hidden = !showSnapshot;
-  panel.refreshValues();
+  if (!showSnapshot) panel.showCategory(category);
 }
 
 function setupPanelToggle(button, close, window, setOpen) {
@@ -283,8 +286,9 @@ if (scene) {
     if (scene.selected) strip.focus(scene.selected);
     else add.focus({ preventScroll: true });
   });
-  showParameters.addEventListener("click", () => setPanel(false));
-  showJSON.addEventListener("click", () => setPanel(true));
+  showParameters.addEventListener("click", () => setPanel("motion"));
+  showExpressionParameters.addEventListener("click", () => setPanel("expression"));
+  showJSON.addEventListener("click", () => setPanel("snapshot"));
   exportJSON.addEventListener("click", () => {
     jsonInput.value = scene.selected.exportParameters();
     jsonInput.focus();

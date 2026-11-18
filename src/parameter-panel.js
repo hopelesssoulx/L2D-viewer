@@ -7,6 +7,7 @@ const svgNamespace = "http://www.w3.org/2000/svg";
 export class ParameterPanel {
   #model = null;
   #rows = [];
+  #category = "motion";
 
   constructor({ view, search, count, hint, list, onPlayback }) {
     this.view = view;
@@ -25,6 +26,12 @@ export class ParameterPanel {
     this.list.replaceChildren(...this.#rows.map(({ row }) => row));
     this.list.scrollTop = 0;
     this.localize();
+  }
+
+  showCategory(category) {
+    this.#category = category;
+    this.list.scrollTop = 0;
+    this.#filter();
   }
 
   localize() {
@@ -104,13 +111,16 @@ export class ParameterPanel {
 
   #filter() {
     const query = this.search.value.trim().toLowerCase();
+    let count = 0;
     let matches = 0;
     for (const entry of this.#rows) {
-      entry.matches = entry.filterKey.includes(query);
+      const inCategory = entry.parameter[this.#category];
+      if (inCategory) count++;
+      entry.matches = inCategory && entry.filterKey.includes(query);
       entry.row.hidden = !entry.matches;
       if (entry.matches) matches++;
     }
-    this.count.textContent = query ? `${matches} / ${this.#rows.length}`
+    this.count.textContent = query ? `${matches} / ${count}`
       : t(matches === 1 ? "oneParameter" : "parameterCount", { count: matches });
     this.refreshValues();
   }
