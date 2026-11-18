@@ -1,3 +1,4 @@
+import { setupCanvasControls } from "./canvas-controls.js";
 import { ViewerModel } from "./live2d-model.js";
 
 function* visibleDrawables(core) {
@@ -74,7 +75,7 @@ export class ModelScene {
   #toolbar;
   #placements = new WeakMap();
 
-  constructor(pixi, host, toolbar, onSelect) {
+  constructor(pixi, host, toolbar, onSelect, onTransform) {
     this.pixi = pixi;
     this.#toolbar = toolbar;
     this.#app = new pixi.Application({
@@ -87,17 +88,17 @@ export class ModelScene {
     host.append(this.#app.view);
     this.#highlight = new pixi.Graphics();
     this.#app.stage.addChild(this.#highlight);
-    this.#app.stage.interactive = true;
-    this.#app.stage.hitArea = this.#app.screen;
-    this.#app.stage.on("pointertap", (event) => {
-      const point = event.data.global;
-      for (let i = this.models.length - 1; i >= 0; i--) {
-        const model = this.models[i];
-        if (hitsModel(model.display, point)) {
-          onSelect(model);
-          break;
-        }
-      }
+    this.setMouseControls = setupCanvasControls(this.#app.view, {
+      pick: (x, y) => this.#pick(x, y),
+      select: onSelect,
+      move: (model, dx, dy) => {
+        const placement = this.#placements.get(model);
+        if (placement) onTransform(model, { x: placement.x + dx, y: placement.y + dy });
+      },
+      zoom: (model, factor) => {
+        const { size } = this.#placements.get(model);
+        onTransform(model, { size: Math.round(size * factor * 100) / 100 });
+      },
     });
     this.#app.ticker.add(() => {
       for (const model of this.models) model.advance(this.#app.ticker.deltaMS);
@@ -113,6 +114,19 @@ export class ModelScene {
 
   get placement() {
     return this.#placements.get(this.selected);
+  }
+
+  #pick(clientX, clientY) {
+    const { left, top, width, height } = this.#app.view.getBoundingClientRect();
+    const point = new this.pixi.Point(
+      (clientX - left) * this.#app.screen.width / width,
+      (clientY - top) * this.#app.screen.height / height
+    );
+    for (let i = this.models.length - 1; i >= 0; i--) {
+      const model = this.models[i];
+      if (hitsModel(model.display, point)) return model;
+    }
+    return null;
   }
 
   async add(source) {
@@ -150,6 +164,7 @@ export class ModelScene {
   remove(model) {
     const index = this.models.indexOf(model);
     this.models.splice(index, 1);
+    this.#placements.delete(model);
     model.dispose();
     this.select(this.models[index] ?? this.models[index - 1] ?? null);
   }

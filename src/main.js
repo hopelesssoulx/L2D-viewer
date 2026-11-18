@@ -221,13 +221,20 @@ try {
     throw new Error("无法加载渲染依赖，请检查网络后刷新页面。");
   }
   pixi.live2d.config.sound = false;
-  scene = new ModelScene(pixi, stage, toolbar, toggleSelection);
+  scene = new ModelScene(pixi, stage, toolbar, toggleSelection, (model, changes) => {
+    if (scene.selected !== model) selectModel(model);
+    scene.setPlacement(changes);
+    refreshTransform();
+  });
 } catch (error) {
   add.disabled = true;
   reportLoad("无法启动查看器。", [error.message]);
 }
 
 if (scene) {
+  const mouseControl = $("canvas-mouse");
+  mouseControl.checked = false;
+  mouseControl.addEventListener("change", () => scene.setMouseControls(mouseControl.checked));
   add.addEventListener("click", () => folder.click());
   folder.addEventListener("change", () => {
     const files = Array.from(folder.files);

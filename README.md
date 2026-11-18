@@ -23,6 +23,8 @@ python3 -m http.server 8765
 5. 在「JSON 快照」中导出可复制的 JSON 文本，或粘贴文本后导入。格式为 `{"ParamAngleX": 10}`。导入会先校验全部键和值，再暂停并应用。可只提供要调整的参数，数值必须在当前模型允许的范围内。
 6. 用功能栏上的太阳和月亮开关切换浅色或深色主题，或通过「背景」设置画布纯色和本地图片。取消「固定」后，功能栏在鼠标移出时自动收起，鼠标移到网页顶边任意位置即可展开。
 
+「模型变换」中的鼠标操控默认关闭。开启后可以在画布上拖动模型，在模型上滚动滚轮可缩放。多个模型重叠时，鼠标操作当前所指位置最上层的模型。
+
 ## 结构
 
 - `src/local-model-source.js` 发现本地模型，通过模型文件的相对路径解析资源。
@@ -30,6 +32,7 @@ python3 -m http.server 8765
 - `src/scene.js` 管理共用画布上的模型位置、图层、选中和生命周期。
 - `src/parameter-panel.js` 渲染参数面板。`src/main.js` 连接导入、场景和页面控件。
 - `src/model-strip.js` 管理横向模型列表。`src/animation-controls.js` 和 `src/transform-controls.js` 分别连接动作表情和位置角度控制。
+- `src/canvas-controls.js` 管理画布点击、鼠标拖动和滚轮缩放。
 - `src/workspace-controls.js` 管理主题、背景和浮动功能栏。
 
 未来的远端模型列表可以生成同样的模型资源对象，给出 `name`、`path`、`readSettings()`、`fileURL(reference)`、`clone()` 和 `dispose()`，并使用现有场景加载流程。
