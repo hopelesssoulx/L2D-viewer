@@ -102,38 +102,32 @@ export function setupTheme(button) {
   });
 }
 
-export function setupInspectorDrag(inspector, handle, toolbar) {
-  const desktop = window.matchMedia("(min-width: 611px)");
+export function setupFloatingPanel(panel, bringForward) {
+  const handle = panel.querySelector(".inspector-bar");
   let drag;
-  let position;
 
-  function move(x, y) {
-    const maxX = Math.max(0, innerWidth - inspector.offsetWidth);
-    const maxY = Math.max(0, innerHeight - inspector.offsetHeight);
-    const minY = Math.min(maxY, toolbar.offsetHeight + 8);
-    position = { x: Math.max(0, Math.min(x, maxX)), y: Math.max(minY, Math.min(y, maxY)) };
-    inspector.dataset.moved = "";
-    inspector.style.setProperty("--inspector-x", `${position.x}px`);
-    inspector.style.setProperty("--inspector-y", `${position.y}px`);
-  }
-
+  panel.addEventListener("pointerdown", () => bringForward(panel));
   handle.addEventListener("pointerdown", (event) => {
-    if (!desktop.matches || event.button !== 0 || event.target.closest("button")) return;
-    const { left, top } = inspector.getBoundingClientRect();
+    if (drag || event.button !== 0 || event.target.closest("button")) return;
+    const { left, top } = panel.getBoundingClientRect();
     drag = { id: event.pointerId, x: event.clientX - left, y: event.clientY - top };
     handle.setPointerCapture(drag.id);
   });
   handle.addEventListener("pointermove", (event) => {
-    if (drag?.id === event.pointerId) move(event.clientX - drag.x, event.clientY - drag.y);
+    if (drag?.id !== event.pointerId) return;
+    panel.dataset.moved = "";
+    panel.style.setProperty("--panel-x", `${event.clientX - drag.x}px`);
+    panel.style.setProperty("--panel-y", `${event.clientY - drag.y}px`);
   });
   handle.addEventListener("lostpointercapture", () => { drag = undefined; });
 
-  new ResizeObserver(() => {
-    if (desktop.matches && position && !inspector.hidden) move(position.x, position.y);
-  }).observe(inspector);
-  window.addEventListener("resize", () => {
-    if (desktop.matches && position && !inspector.hidden) move(position.x, position.y);
-  });
+  return () => {
+    const { left, top, right, bottom } = handle.getBoundingClientRect();
+    if (right < 16 || left > innerWidth - 16 || bottom < 12 || top > innerHeight - 12) {
+      delete panel.dataset.moved;
+    }
+    bringForward(panel);
+  };
 }
 
 export function setupBackground(stage, popup, input, upload, status) {

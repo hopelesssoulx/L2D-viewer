@@ -4,7 +4,7 @@ import { ModelStrip } from "./model-strip.js";
 import { ModelScene } from "./scene.js";
 import { ParameterPanel } from "./parameter-panel.js";
 import { setupTransformControls } from "./transform-controls.js";
-import { setupBackground, setupInspectorDrag, setupTheme, setupToolbar } from "./workspace-controls.js";
+import { setupBackground, setupFloatingPanel, setupTheme, setupToolbar } from "./workspace-controls.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -18,7 +18,7 @@ const inspectorWindow = $("inspector");
 const toggleInspector = $("toggle-inspector");
 const transformWindow = $("transform-window");
 const toggleTransform = $("toggle-transform");
-const togglePlayback = $("toggle-playback");
+const playbackButtons = [$("toggle-playback"), $("inspector-playback")];
 const reset = $("reset-parameters");
 const copy = $("copy-model");
 const remove = $("remove-model");
@@ -74,13 +74,19 @@ function setJSONStatus(message, error = false) {
 function setInspector(open) {
   inspectorWindow.hidden = !open;
   toggleInspector.setAttribute("aria-expanded", open);
-  if (open) panel.refreshValues();
+  if (open) {
+    revealInspector();
+    panel.refreshValues();
+  }
 }
 
 function setTransform(open) {
   transformWindow.hidden = !open;
   toggleTransform.setAttribute("aria-expanded", open);
-  if (open) refreshTransform();
+  if (open) {
+    revealTransform();
+    refreshTransform();
+  }
 }
 
 function syncPlayback() {
@@ -90,8 +96,10 @@ function syncPlayback() {
   add.disabled = loadingModels;
   copy.disabled = loadingModels || !model || busy;
   remove.disabled = loadingModels || !model || busy;
-  togglePlayback.disabled = !model || model.loadingMotion;
-  togglePlayback.textContent = model?.paused ? "继续" : "暂停";
+  for (const button of playbackButtons) {
+    button.disabled = !model || model.loadingMotion;
+    button.textContent = model?.paused ? "继续" : "暂停";
+  }
   toggleInspector.disabled = toggleTransform.disabled = !model;
   if (!model) {
     playbackState.textContent = "";
@@ -203,7 +211,12 @@ function setupPanelToggle(button, close, window, setOpen) {
 }
 
 setupToolbar($("toolbar-dock"), toolbar, $("pin-toolbar"), $("reveal-toolbar"));
-setupInspectorDrag(inspectorWindow, $("inspector-bar"), toolbar);
+function bringForward(panel) {
+  inspectorWindow.toggleAttribute("data-front", panel === inspectorWindow);
+  transformWindow.toggleAttribute("data-front", panel === transformWindow);
+}
+const revealInspector = setupFloatingPanel(inspectorWindow, bringForward);
+const revealTransform = setupFloatingPanel(transformWindow, bringForward);
 setupTheme($("theme-toggle"));
 new ResizeObserver(() => {
   if (!transformWindow.hidden) {
@@ -241,10 +254,12 @@ if (scene) {
     folder.value = "";
     if (files.length && !loadingModels) void importFolder(files);
   });
-  togglePlayback.addEventListener("click", () => {
-    scene.selected.paused = !scene.selected.paused;
-    syncPlayback();
-  });
+  for (const button of playbackButtons) {
+    button.addEventListener("click", () => {
+      scene.selected.paused = !scene.selected.paused;
+      syncPlayback();
+    });
+  }
   reset.addEventListener("click", () => {
     scene.selected.resetParameters();
     syncPlayback();
@@ -276,6 +291,6 @@ if (scene) {
   });
 
   window.setInterval(() => {
-    if (!inspectorWindow.hidden && scene.selected && !scene.selected.paused) panel.refreshValues();
+    if (!inspectorWindow.hidden && scene.selected) panel.refreshValues();
   }, 80);
 }

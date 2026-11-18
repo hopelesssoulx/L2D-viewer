@@ -70,7 +70,7 @@
         <span>动作</span>
         <select data-motion-select></select>
       </label>
-      <button type="button" data-play-motion>播放</button>
+      <button type="button" data-play-motion>（重）播放</button>
     </div>
     <label class="animation-field">
       <span>表情</span>
@@ -93,7 +93,7 @@
     <p id="background-status" class="inline-message muted" role="status" hidden></p>
   </section>
 
-  <aside id="inspector" class="inspector glass" aria-labelledby="inspector-heading" hidden>
+  <aside id="inspector" class="inspector floating-panel glass" aria-labelledby="inspector-heading" hidden>
     <div id="inspector-bar" class="inspector-bar">
       <h2 id="inspector-heading">参数检查器</h2>
       <button id="close-inspector" type="button" class="quiet close" aria-label="关闭参数检查器">×</button>
@@ -103,6 +103,7 @@
       <div class="panel-switch" aria-label="检查器面板">
         <button id="show-parameters" type="button" aria-pressed="true" aria-controls="parameters-view">实时参数</button>
         <button id="show-json" type="button" aria-pressed="false" aria-controls="json-view">JSON 快照</button>
+        <button id="inspector-playback" type="button" disabled>暂停</button>
         <button id="reset-parameters" type="button">重置参数</button>
       </div>
       <section id="parameters-view" class="parameters-view" aria-label="实时参数">
@@ -125,7 +126,7 @@
     </div>
   </aside>
 
-  <aside id="transform-window" class="transform-window glass" aria-labelledby="transform-heading" hidden>
+  <aside id="transform-window" class="transform-window floating-panel glass" aria-labelledby="transform-heading" hidden>
     <div class="inspector-bar">
       <h2 id="transform-heading">模型变换</h2>
       <button id="close-transform" type="button" class="quiet close" aria-label="关闭模型变换">×</button>
@@ -151,8 +152,8 @@
         <button type="button" data-reset="rotation">重置旋转</button>
       </div>
       <div class="transform-line">
-        <button type="button" aria-label="缩小模型" data-axis="size" data-increment="-5">−</button>
-        <button type="button" aria-label="放大模型" data-axis="size" data-increment="5">+</button>
+        <button type="button" aria-label="缩小模型" data-axis="size" data-increment="-5" data-step-on-click>−</button>
+        <button type="button" aria-label="放大模型" data-axis="size" data-increment="5" data-step-on-click>+</button>
         <label class="transform-field">大小 <input type="number" step="any" data-placement-field="size" aria-label="模型大小百分比"><span>%</span></label>
         <button type="button" data-reset="size">重置大小</button>
       </div>

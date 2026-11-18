@@ -3,6 +3,7 @@ const resetValues = {
   rotation: { angle: 0 },
   size: { size: 100 },
 };
+const holdButton = "button[data-axis]:not([data-step-on-click])";
 
 export function setupTransformControls(host, getPlacement, update) {
   const fields = [...host.querySelectorAll("[data-placement-field]")];
@@ -40,7 +41,7 @@ export function setupTransformControls(host, getPlacement, update) {
       step(button, placement);
       hold.timer = setTimeout(repeat, 65);
     }
-    hold.timer = setTimeout(repeat, 250);
+    repeat();
   }
 
   for (const input of fields) {
@@ -52,7 +53,7 @@ export function setupTransformControls(host, getPlacement, update) {
   }
 
   host.addEventListener("pointerdown", (event) => {
-    const button = event.target.closest("button[data-axis]");
+    const button = event.target.closest(holdButton);
     if (button && event.button === 0 && !hold) {
       start(button, event.pointerId);
       if (hold) button.setPointerCapture(event.pointerId);
@@ -64,12 +65,12 @@ export function setupTransformControls(host, getPlacement, update) {
     });
   }
   host.addEventListener("contextmenu", (event) => {
-    if (event.target.closest("button[data-axis]")) event.preventDefault();
+    if (event.target.closest(holdButton)) event.preventDefault();
   });
 
   for (const type of ["keydown", "keyup"]) {
     host.addEventListener(type, (event) => {
-      const button = event.target.closest("button[data-axis]");
+      const button = event.target.closest(holdButton);
       if (!button || ![" ", "Enter"].includes(event.key)) return;
       event.preventDefault();
       if (type === "keydown" && !event.repeat) start(button, "keyboard");
@@ -85,7 +86,9 @@ export function setupTransformControls(host, getPlacement, update) {
     const placement = getPlacement();
     const button = event.target.closest("button");
     if (!button || !placement) return;
-    if (button.dataset.axis && event.detail === 0) step(button, placement);
+    if (button.dataset.axis && (button.hasAttribute("data-step-on-click") || event.detail === 0)) {
+      step(button, placement);
+    }
     const changes = resetValues[button.dataset.reset];
     if (changes) {
       update(changes);

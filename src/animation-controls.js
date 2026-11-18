@@ -12,12 +12,9 @@ export class AnimationControls {
       const expression = host.querySelector("[data-expression-select]");
       const play = host.querySelector("[data-play-motion]");
       const error = host.querySelector("[data-animation-error]");
-      motion.addEventListener("change", () => {
-        const model = this.#getModel();
-        if (!model) return;
-        model.motionChoice = Number(motion.value);
-        this.sync();
-      });
+      motion.addEventListener("change", () =>
+        this.#run((model) => model.playMotion(Number(motion.value)))
+      );
       play.addEventListener("click", () => this.#run((model) => model.playMotion()));
       expression.addEventListener("change", () =>
         this.#run((model) => model.setExpression(Number(expression.value)))
@@ -31,7 +28,9 @@ export class AnimationControls {
     const model = this.#getModel();
     for (const { motion, expression } of this.#pickers) {
       const motions = model?.motions.map(({ label }, index) => new Option(label, index)) ?? [];
-      motion.replaceChildren(...(motions.length ? motions : [new Option("无动作", "")]));
+      const prompt = new Option(motions.length ? "选择动作" : "无动作", -1);
+      prompt.disabled = Boolean(motions.length);
+      motion.replaceChildren(prompt, ...motions);
       expression.replaceChildren(new Option("无表情", -1),
         ...(model?.expressions.map((label, index) => new Option(label, index)) ?? []));
     }
@@ -41,9 +40,10 @@ export class AnimationControls {
   sync() {
     const model = this.#getModel();
     for (const { motion, expression, play, error } of this.#pickers) {
-      motion.disabled = play.disabled = !model?.motions.length || model.loadingMotion;
+      motion.disabled = !model?.motions.length || model.loadingMotion;
+      play.disabled = motion.disabled || model.motionChoice < 0;
       expression.disabled = !model?.expressions.length || model.loadingExpression;
-      motion.value = model?.motions.length ? model.motionChoice : "";
+      motion.value = model?.motionChoice ?? -1;
       expression.value = model?.expressionChoice ?? -1;
       motion.title = motion.selectedOptions[0]?.textContent ?? "";
       expression.title = expression.selectedOptions[0]?.textContent ?? "";

@@ -46,11 +46,13 @@ function readSnapshot(text, parameters) {
 }
 
 const expressionBlends = ["Add", "Multiply", "Overwrite"];
+const expressionFadeMs = 250;
+const manualIdleGroup = Symbol("No automatic idle motion");
 
 export class ViewerModel {
   static async load(pixi, source) {
     const live2d = pixi.live2d;
-    const options = { autoUpdate: false, autoInteract: false, motionPreload: "NONE" };
+    const options = { autoUpdate: false, autoInteract: false, motionPreload: "NONE", idleMotionGroup: manualIdleGroup };
     const display = new live2d.Live2DModel(options);
     let textureURLs = [];
     try {
@@ -92,6 +94,9 @@ export class ViewerModel {
   #motionPriority;
   #expressionManager;
   #expression;
+  #expressionFade;
+  #expressionLayers = new Map();
+  #blendedValues;
 
   constructor(display, source, motionPriority, descriptions) {
     this.display = display;
@@ -99,7 +104,7 @@ export class ViewerModel {
     this.name = source.name;
     this.paused = false;
     this.loadingMotion = false;
-    this.motionChoice = 0;
+    this.motionChoice = -1;
     this.motionError = "";
     this.loadingExpression = false;
     this.expressionChoice = -1;
@@ -107,6 +112,8 @@ export class ViewerModel {
     this.#motionPriority = motionPriority;
 
     const internal = display.internalModel;
+    internal.breath.setParameters(internal.breath.getParameters()
+      .filter(({ parameterId }) => parameterId === internal.idParamBreath));
     this.#core = internal.coreModel;
     const parameters = this.#core.getModel().parameters;
     this.parameters = Array.from(parameters.ids, (id, index) => ({
@@ -120,6 +127,7 @@ export class ViewerModel {
     this.#values = Float32Array.from(parameters.values);
     this.#baseValues = this.#values.slice();
     this.#animationValues = new Float32Array(parameters.count);
+    this.#blendedValues = new Float32Array(parameters.count);
     this.motions = Object.entries(internal.motionManager.definitions).flatMap(([group, motions]) =>
       motions.map(({ File }, index) => {
         const name = File.split(/[\\/]/).at(-1).replace(/\.motion3\.json$/i, "");
@@ -146,13 +154,59 @@ export class ViewerModel {
     // The adapter restores its motion-only values just after drawing the pose.
     internal.on("beforeModelUpdate", () => {
       this.#baseValues.set(parameters.values);
-      this.#expression?.doUpdateParameters(this.#core, 0, 1);
+      this.#applyExpression(parameters.values);
       this.#values.set(parameters.values);
     });
   }
 
   advance(deltaMS) {
+    const fading = this.#advanceExpression(deltaMS);
     if (!this.paused && !this.loadingMotion) this.display.update(deltaMS);
+    else if (fading) this.#applyPose(true);
+  }
+
+  #finishExpressionFade() {
+    this.#expressionFade = undefined;
+    this.#expressionLayers.clear();
+    if (this.#expression) this.#expressionLayers.set(this.#expression, 1);
+  }
+
+  #advanceExpression(deltaMS) {
+    const fade = this.#expressionFade;
+    if (!fade) return false;
+    fade.elapsed += deltaMS;
+    const progress = Math.min(1, fade.elapsed / expressionFadeMs);
+    if (progress === 1) {
+      this.#finishExpressionFade();
+      return true;
+    }
+    const weight = progress * progress * (3 - 2 * progress);
+    this.#expressionLayers.clear();
+    for (const [expression, previousWeight] of fade.layers) {
+      this.#expressionLayers.set(expression, previousWeight * (1 - weight));
+    }
+    if (this.#expression) {
+      this.#expressionLayers.set(this.#expression, (this.#expressionLayers.get(this.#expression) ?? 0) + weight);
+    }
+    return true;
+  }
+
+  #applyExpression(values) {
+    if (!this.#expressionFade) {
+      this.#expression?.doUpdateParameters(this.#core, 0, 1);
+      return;
+    }
+
+    // Evaluate both expressions on the same pose before mixing their results.
+    this.#blendedValues.set(this.#baseValues);
+    for (const [expression, weight] of this.#expressionLayers) {
+      values.set(this.#baseValues);
+      expression.doUpdateParameters(this.#core, 0, 1);
+      for (let index = 0; index < values.length; index++) {
+        this.#blendedValues[index] += (values[index] - this.#baseValues[index]) * weight;
+      }
+    }
+    values.set(this.#blendedValues);
   }
 
   async clone(pixi) {
@@ -163,7 +217,7 @@ export class ViewerModel {
     const copy = await ViewerModel.load(pixi, this.source.clone());
     try {
       copy.paused = true;
-      await copy.setExpression(expressionChoice);
+      await copy.setExpression(expressionChoice, { immediate: true });
       if (copy.expressionError) throw new Error(copy.expressionError);
       copy.motionChoice = motionChoice;
       copy.#values.set(values);
@@ -215,13 +269,14 @@ export class ViewerModel {
   }
 
   #applyPose(expressionChanged = false) {
+    if (!expressionChanged && this.#expressionFade) this.#finishExpressionFade();
     const values = this.#core.getModel().parameters.values;
     this.#animationValues.set(values);
     try {
       values.set(expressionChanged ? this.#baseValues : this.#values);
       if (expressionChanged) {
         // Compose on the held frame so switching expressions never advances a paused motion.
-        this.#expression?.doUpdateParameters(this.#core, 0, 1);
+        this.#applyExpression(values);
         this.#values.set(values);
       }
       this.#core.update();
@@ -231,7 +286,7 @@ export class ViewerModel {
     }
   }
 
-  async setExpression(index) {
+  async setExpression(index, { immediate = false } = {}) {
     if (this.loadingExpression || index === this.expressionChoice) return;
     this.loadingExpression = true;
     this.expressionError = "";
@@ -240,7 +295,8 @@ export class ViewerModel {
       if (index >= 0 && !expression) throw new Error("无法加载所选表情。");
       this.#expression = expression;
       this.expressionChoice = index;
-      if (this.paused) this.#applyPose(true);
+      if (immediate) this.#finishExpressionFade();
+      else this.#expressionFade = { layers: new Map(this.#expressionLayers), elapsed: 0 };
     } catch (error) {
       this.expressionError = error.message;
     } finally {
@@ -248,13 +304,16 @@ export class ViewerModel {
     }
   }
 
-  async playMotion() {
-    const motion = this.motions[this.motionChoice];
+  async playMotion(index = this.motionChoice) {
+    const motion = this.motions[index];
     if (!motion || this.loadingMotion) return;
     this.loadingMotion = true;
+    this.motionChoice = index;
     this.motionError = "";
     try {
-      this.display.internalModel.motionManager.stopAllMotions();
+      const manager = this.display.internalModel.motionManager;
+      if (!await manager.loadMotion(motion.group, motion.index)) throw new Error("无法加载或播放所选动作。");
+      manager.stopAllMotions();
       const started = await this.display.motion(motion.group, motion.index, this.#motionPriority);
       if (!started) throw new Error("无法加载或播放所选动作。");
       this.paused = false;
