@@ -43,6 +43,8 @@ function readSnapshot(text, parameters) {
   });
 }
 
+const expressionBlends = ["Add", "Multiply", "Overwrite"];
+
 export class ViewerModel {
   static async load(pixi, source) {
     const live2d = pixi.live2d;
@@ -81,8 +83,11 @@ export class ViewerModel {
 
   #core;
   #values;
+  #baseValues;
   #animationValues;
   #motionPriority;
+  #expressionManager;
+  #expression;
 
   constructor(display, source, motionPriority) {
     this.display = display;
@@ -92,6 +97,9 @@ export class ViewerModel {
     this.loadingMotion = false;
     this.motionChoice = 0;
     this.motionError = "";
+    this.loadingExpression = false;
+    this.expressionChoice = -1;
+    this.expressionError = "";
     this.#motionPriority = motionPriority;
 
     const internal = display.internalModel;
@@ -105,6 +113,7 @@ export class ViewerModel {
       defaultValue: parameters.defaultValues[index],
     }));
     this.#values = Float32Array.from(parameters.values);
+    this.#baseValues = this.#values.slice();
     this.#animationValues = new Float32Array(parameters.count);
     this.motions = Object.entries(internal.motionManager.definitions).flatMap(([group, motions]) =>
       motions.map(({ File }, index) => {
@@ -113,8 +122,28 @@ export class ViewerModel {
       })
     );
 
+    this.#expressionManager = internal.motionManager.expressionManager;
+    this.expressions = (this.#expressionManager?.definitions ?? []).map(({ Name, File }) =>
+      (Name || File.split(/[\\/]/).at(-1)).replace(/\.exp3\.json$/i, "")
+    );
+    if (this.#expressionManager) {
+      const create = this.#expressionManager.createExpression.bind(this.#expressionManager);
+      // Some exporters emit Cubism's numeric blend enum.
+      this.#expressionManager.createExpression = (data, definition) => create({
+        ...data,
+        Parameters: (data.Parameters ?? []).map((parameter) => ({
+          ...parameter,
+          Blend: expressionBlends[parameter.Blend] ?? parameter.Blend,
+        })),
+      }, definition);
+    }
+
     // The adapter restores its motion-only values just after drawing the pose.
-    internal.on("beforeModelUpdate", () => this.#values.set(parameters.values));
+    internal.on("beforeModelUpdate", () => {
+      this.#baseValues.set(parameters.values);
+      this.#expression?.doUpdateParameters(this.#core, 0, 1);
+      this.#values.set(parameters.values);
+    });
   }
 
   advance(deltaMS) {
@@ -127,13 +156,15 @@ export class ViewerModel {
 
   setParameter(parameter, value) {
     if (!this.paused || !Number.isFinite(value)) return;
-    this.#values[parameter.index] = Math.min(parameter.max, Math.max(parameter.min, value));
+    const clamped = Math.min(parameter.max, Math.max(parameter.min, value));
+    this.#baseValues[parameter.index] = this.#values[parameter.index] = clamped;
     this.#applyPose();
   }
 
   resetParameters() {
     this.paused = true;
     for (const parameter of this.parameters) this.#values[parameter.index] = parameter.defaultValue;
+    this.#baseValues.set(this.#values);
     this.#applyPose();
   }
 
@@ -146,20 +177,42 @@ export class ViewerModel {
   importParameters(text) {
     const entries = readSnapshot(text, this.parameters);
     this.paused = true;
-    for (const [index, value] of entries) this.#values[index] = value;
+    for (const [index, value] of entries) this.#baseValues[index] = this.#values[index] = value;
     this.#applyPose();
     return entries.length;
   }
 
-  #applyPose() {
+  #applyPose(expressionChanged = false) {
     const values = this.#core.getModel().parameters.values;
     this.#animationValues.set(values);
     try {
-      values.set(this.#values);
+      values.set(expressionChanged ? this.#baseValues : this.#values);
+      if (expressionChanged) {
+        // Compose on the held frame so switching expressions never advances a paused motion.
+        this.#expression?.doUpdateParameters(this.#core, 0, 1);
+        this.#values.set(values);
+      }
       this.#core.update();
     } finally {
       // Keep the playback baseline and clock intact while editing a still frame.
       values.set(this.#animationValues);
+    }
+  }
+
+  async setExpression(index) {
+    if (this.loadingExpression || index === this.expressionChoice) return;
+    this.loadingExpression = true;
+    this.expressionError = "";
+    try {
+      const expression = index < 0 ? undefined : await this.#expressionManager.loadExpression(index);
+      if (index >= 0 && !expression) throw new Error("无法加载所选表情。");
+      this.#expression = expression;
+      this.expressionChoice = index;
+      if (this.paused) this.#applyPose(true);
+    } catch (error) {
+      this.expressionError = error.message;
+    } finally {
+      this.loadingExpression = false;
     }
   }
 

@@ -68,15 +68,17 @@ export class ModelScene {
 
     const columns = Math.min(Math.ceil(Math.sqrt(count)), Math.max(1, Math.floor(width / 195)));
     const rows = Math.ceil(count / columns);
+    // A constant top inset keeps models below the overlay in either toolbar mode.
+    const topInset = Math.min(106, height * 0.23);
     const cellWidth = width / columns;
-    const cellHeight = height / rows;
+    const cellHeight = (height - topInset) / rows;
     const inset = Math.min(12, cellWidth * 0.07, cellHeight * 0.07);
 
     this.models.forEach((model, index) => {
       const row = Math.floor(index / columns);
       const rowCount = Math.min(columns, count - row * columns);
       const left = (width - rowCount * cellWidth) / 2 + (index % columns) * cellWidth;
-      const top = row * cellHeight;
+      const top = topInset + row * cellHeight;
       const { display } = model;
       const { width: modelWidth, height: modelHeight } = display.internalModel;
       const scale = Math.min((cellWidth - 2 * inset) / modelWidth, (cellHeight - 2 * inset) / modelHeight);
@@ -86,8 +88,8 @@ export class ModelScene {
       this.#slots.push({ model, left, top, width: cellWidth, height: cellHeight });
 
       if (count > 1 && model === this.selected) {
-        this.#highlight.lineStyle(1, 0xa8e7bd, 0.45);
-        this.#highlight.beginFill(0xa8e7bd, 0.04);
+        this.#highlight.lineStyle(1, 0x6d94d7, 0.6);
+        this.#highlight.beginFill(0x6d94d7, 0.06);
         this.#highlight.drawRoundedRect(left + inset, top + inset,
           cellWidth - 2 * inset, cellHeight - 2 * inset, 10);
         this.#highlight.endFill();
