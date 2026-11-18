@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>L2D Viewer</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./style.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/pixi.js@6.5.10/dist/browser/pixi.min.js" integrity="sha384-98eYPI3XO3wKMBW5IUYk3WpffOsMLc+0WSK+ZMutD8S5R6e4E7hKIqFKcdHBLOMB" crossorigin="anonymous"></script>
+  <script defer src="https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/cubism4.min.js" integrity="sha384-x73Ez+8Lf2UpkuWDPMvQ/T8scXzifx3geDffp4EdBI2/r/z+NlTxlHA5xySHOP7n" crossorigin="anonymous"></script>
+  <script type="module" src="./src/main.js"></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="./" aria-label="L2D Viewer 首页">
+      <span class="brand-icon" aria-hidden="true"></span>
+      <span>L2D Viewer</span>
+    </a>
+    <input id="folder-input" type="file" webkitdirectory multiple hidden>
+    <button id="add-models" type="button" class="primary">
+      <span aria-hidden="true">＋</span> 导入文件夹
+    </button>
+  </header>
+  <main class="workspace">
+    <section class="viewport surface" aria-labelledby="stage-heading">
+      <div class="section-bar">
+        <h1 id="stage-heading">模型画布</h1>
+        <span id="model-count" class="muted">0 个模型</span>
+      </div>
+      <div id="stage" class="stage">
+        <div id="stage-empty" class="stage-empty">
+          <span class="frame-icon" aria-hidden="true"><span></span></span>
+          <strong>导入 Live2D 模型</strong>
+          <p>选择包含 .model3.json 的文件夹，可以一次添加多个模型。</p>
+        </div>
+      </div>
+      <div class="model-tray">
+        <h2>模型</h2>
+        <div id="model-list" class="model-list" aria-label="场景中的模型">
+          <span id="model-list-empty" class="muted">暂无模型</span>
+        </div>
+      </div>
+      <div id="load-report" class="load-report" hidden>
+        <p id="load-message" role="status"></p>
+        <ul id="load-errors" hidden></ul>
+      </div>
+    </section>
+    <aside class="inspector surface" aria-labelledby="inspector-heading">
+      <div class="section-bar">
+        <h2 id="inspector-heading">参数检查器</h2>
+        <span id="playback-state" class="playback-state" hidden></span>
+      </div>
+      <div id="inspector-empty" class="inspector-empty">导入并选中模型后，这里会显示实时参数。</div>
+      <div id="inspector-content" class="inspector-content" hidden>
+        <section class="model-controls" aria-label="模型动作">
+          <div class="model-header">
+            <h3 id="active-model"></h3>
+            <button id="remove-model" type="button" class="quiet remove" aria-label="移除选中的模型">移除</button>
+          </div>
+          <label class="control-label" for="motion-select">动作</label>
+          <div class="motion-controls">
+            <select id="motion-select"></select>
+            <button id="play-motion" type="button">播放</button>
+          </div>
+          <div class="pose-controls">
+            <button id="toggle-playback" type="button">暂停</button>
+            <button id="reset-parameters" type="button">重置参数</button>
+          </div>
+          <p id="motion-error" class="error inline-message" role="status" hidden></p>
+        </section>
+        <div class="panel-switch" aria-label="检查器面板">
+          <button id="show-parameters" type="button" aria-pressed="true" aria-controls="parameters-view">实时参数</button>
+          <button id="show-json" type="button" aria-pressed="false" aria-controls="json-view">JSON 快照</button>
+        </div>
+        <section id="parameters-view" class="parameters-view" aria-label="实时参数">
+          <div class="parameter-toolbar">
+            <input id="parameter-search" type="search" placeholder="搜索参数 ID" aria-label="搜索参数 ID">
+            <span id="parameter-count" class="muted"></span>
+          </div>
+          <p id="parameter-hint" class="parameter-hint muted"></p>
+          <div id="parameter-list" class="parameter-list"></div>
+        </section>
+        <section id="json-view" class="json-view" aria-label="JSON 快照" hidden>
+          <label for="parameter-json">参数 JSON</label>
+          <textarea id="parameter-json" placeholder='{"ParamAngleX": 10}' spellcheck="false"></textarea>
+          <div class="json-actions">
+            <button id="export-json" type="button">导出当前参数</button>
+            <button id="import-json" type="button" class="primary">导入 JSON</button>
+          </div>
+          <p id="json-status" class="inline-message" role="status">粘贴参数 JSON 后导入，模型会暂停并应用数值。</p>
+        </section>
+      </div>
+    </aside>
+  </main>
+</body>
+</html>
