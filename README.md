@@ -12,7 +12,7 @@ python3 -m http.server 8765
 
 用支持文件夹选择、WebGL 和 Popover API 的现代浏览器打开 `http://localhost:8765/`。浏览器需要加载 jsDelivr 上的 PixiJS 和 Live2D 适配器，以及 Live2D 官方站点上的 Cubism Core。
 
-要试用仓库中的三个样本，可在页面上一次导入整个 `resources` 文件夹。导入后会显示各模型的默认姿势，并运行 Cubism 的摇摆、呼吸和模型支持的自动眨眼。
+要试用仓库中的三个样本，可在页面上一次导入整个 `resources` 文件夹。导入后会显示各模型的默认姿势，并运行 Cubism 的呼吸和模型支持的自动眨眼。
 
 ## 使用
 
