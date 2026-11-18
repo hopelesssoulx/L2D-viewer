@@ -399,10 +399,22 @@ button.primary:hover:not(:disabled) { background: var(--primary-hover); }
 #inspector-animation .animation-field { flex-grow: 1; }
 #inspector-animation .animation-field select { flex: 1; width: 0; }
 #inspector-animation .animation-error { flex-basis: 100%; }
+.motion-progress {
+  display: grid;
+  flex: 1 1 100%;
+  grid-template-columns: auto minmax(45px, 1fr) 52px auto;
+  align-items: center;
+  gap: 6px;
+  font-size: .82rem;
+  font-variant-numeric: tabular-nums;
+}
+.motion-progress input[type="range"] { width: 100%; margin: 0; accent-color: var(--accent); }
+.motion-progress input[type="number"] { width: 100%; padding: 3px 5px; }
+.motion-progress span[data-last-frame] { white-space: nowrap; }
 .panel-switch { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
 .panel-switch button { font-size: .85rem; }
 .panel-switch button[aria-pressed="true"] { background: var(--accent-wash); color: var(--accent); border-color: transparent; }
-#inspector-playback { margin-left: auto; }
+.parameter-actions { display: flex; gap: 5px; margin-inline-start: auto; }
 .parameters-view, .json-view { flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 12px 14px; }
 .parameter-toolbar { display: flex; align-items: center; gap: 9px; }
 .parameter-toolbar input { flex: 1; width: 100%; padding: 6px 9px; }
@@ -570,7 +582,13 @@ input.toggle-switch:disabled { opacity: .55; cursor: default; }
   #toolbar-animation { flex-wrap: wrap; gap: 5px 12px; }
   #toolbar-animation .animation-motion,
   #toolbar-animation .animation-expression { flex: 1 1 100%; }
-  .inspector { --inspector-stack-height: 41dvh; }
+  .inspector { --inspector-stack-height: 45dvh; }
+  .inspector-content { overflow-y: auto; overscroll-behavior: contain; }
+  #inspector-animation, .panel-switch, .parameters-view, .parameter-list { flex: none; }
+  .parameter-list { overflow: visible; }
+  .panel-switch { padding-block: 6px; }
+  .panel-switch button { min-height: 29px; padding-inline: 7px; }
+  .json-view { flex: 1 0 180px; overflow: visible; }
 }
 
 @media (max-width: 360px) {

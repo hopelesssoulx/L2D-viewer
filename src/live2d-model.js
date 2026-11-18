@@ -74,7 +74,7 @@ export class ViewerModel {
       display.on("physicsLoadError", () => failedOptionals.push(settings.physics));
       await live2d.Live2DFactory.setupLive2DModel(display, settings, options);
       if (failedOptionals.length) throw new ViewerError("unreadableModelFiles", { paths: failedOptionals.join(", ") });
-      return new ViewerModel(display, source, live2d.MotionPriority.FORCE, await descriptions, await groups);
+      return new ViewerModel(display, source, live2d, await descriptions, await groups);
     } catch (error) {
       try {
         if (display.internalModel) display.destroy();
@@ -94,13 +94,15 @@ export class ViewerModel {
   #animationValues;
   #motionPriority;
   #activeMotion;
+  #activeMotionIndex = -1;
+  #previewEntry;
   #expressionManager;
   #expression;
   #expressionFade;
   #expressionLayers = new Map();
   #blendedValues;
 
-  constructor(display, source, motionPriority, descriptions, groups) {
+  constructor(display, source, live2d, descriptions, groups) {
     this.display = display;
     this.source = source;
     this.copyNumber = 0;
@@ -112,7 +114,8 @@ export class ViewerModel {
     this.loadingExpression = false;
     this.expressionChoice = -1;
     this.expressionError = null;
-    this.#motionPriority = motionPriority;
+    this.#motionPriority = live2d.MotionPriority.FORCE;
+    this.#previewEntry = new live2d.CubismMotionQueueEntry();
 
     const internal = display.internalModel;
     internal.breath.setParameters(internal.breath.getParameters()
@@ -223,18 +226,29 @@ export class ViewerModel {
   async clone(pixi) {
     const values = this.#values.slice();
     const baseValues = this.#baseValues.slice();
-    const opacities = this.#core.getModel().parts.opacities.slice();
+    const originalCore = this.#core.getModel();
+    const animationValues = originalCore.parameters.values.slice();
+    const opacities = originalCore.parts.opacities.slice();
     const { motionChoice, loopMotion, expressionChoice } = this;
+    const progress = this.motionProgress;
     const copy = await ViewerModel.load(pixi, this.source.clone());
     try {
+      copy.motionChoice = motionChoice;
+      copy.loopMotion = loopMotion;
+      if (progress) {
+        await copy.playMotion();
+        const entry = copy.#motionEntry();
+        if (entry) copy.#positionMotion(entry, progress.elapsed);
+      }
       copy.paused = true;
       await copy.setExpression(expressionChoice, { immediate: true });
       if (copy.expressionError) throw copy.expressionError;
-      copy.motionChoice = motionChoice;
-      copy.loopMotion = loopMotion;
       copy.#values.set(values);
       copy.#baseValues.set(baseValues);
-      copy.#core.getModel().parts.opacities.set(opacities);
+      const copyCore = copy.#core.getModel();
+      copyCore.parameters.values.set(animationValues);
+      copyCore.parts.opacities.set(opacities);
+      copy.#core.saveParameters();
       copy.#applyPose();
       return copy;
     } catch (error) {
@@ -334,12 +348,74 @@ export class ViewerModel {
       const started = await this.display.motion(motion.group, motion.index, this.#motionPriority);
       if (!started) throw new ViewerError("motionFailed");
       this.#activeMotion = clip;
+      this.#activeMotionIndex = index;
       this.paused = false;
     } catch (error) {
       this.motionError = error;
     } finally {
       this.loadingMotion = false;
     }
+  }
+
+  #motionEntry() {
+    return this.display.internalModel.motionManager.queueManager._motions[0];
+  }
+
+  get motionProgress() {
+    const clip = this.#activeMotion;
+    if (!clip || this.loadingMotion || this.#activeMotionIndex !== this.motionChoice) return;
+    const duration = clip.getLoopDuration();
+    const fps = clip._sourceFrameRate;
+    const lastFrame = Math.max(1, Math.round(duration * fps));
+    if (duration <= 0 || fps <= 0 || !Number.isSafeInteger(lastFrame)) return;
+
+    const entry = this.#motionEntry();
+    let elapsed = duration;
+    if (entry) {
+      const offset = entry.isStarted() ? this.display.elapsedTime / 1000 - entry.getStartTime() : 0;
+      elapsed = Math.min(duration, Math.max(0, offset));
+    }
+    const frame = duration - elapsed < 1e-6 ? lastFrame : Math.min(lastFrame, Math.floor(elapsed * fps + 1e-6));
+    return { frame, lastFrame, duration, fps, elapsed };
+  }
+
+  async seekMotion(frame) {
+    const progress = this.motionProgress;
+    if (!progress || !Number.isFinite(frame)) return;
+    let entry = this.#motionEntry();
+    if (!entry) {
+      await this.playMotion();
+      entry = this.#motionEntry();
+      if (!entry || this.motionError) return;
+    }
+    const target = Math.min(progress.lastFrame, Math.max(0, Math.round(frame)));
+    const time = target === progress.lastFrame ? progress.duration : Math.min(progress.duration, target / progress.fps);
+    const clip = this.#activeMotion;
+    this.paused = true;
+
+    // Preview the authored curves at full weight without advancing the playback queue.
+    this.#previewEntry.setStartTime(-time);
+    this.#previewEntry.setFadeInStartTime(-Infinity);
+    const loop = clip.isLoop();
+    clip.setIsLoop(true);
+    try {
+      clip.doUpdateParameters(this.#core, 0, 1, this.#previewEntry);
+    } finally {
+      clip.setIsLoop(loop);
+    }
+    this.#core.saveParameters();
+    this.#baseValues.set(this.#core.getModel().parameters.values);
+    this.#applyPose(true);
+    this.#positionMotion(entry, time);
+  }
+
+  #positionMotion(entry, time) {
+    const now = this.display.elapsedTime / 1000;
+    entry.setIsStarted(true);
+    entry.setStartTime(now - time);
+    entry.setFadeInStartTime(-Infinity);
+    entry.setLastCheckEventSeconds(now);
+    this.#configureLoop(this.#activeMotion, entry);
   }
 
   setMotionLoop(enabled) {
@@ -352,8 +428,7 @@ export class ViewerModel {
     }
 
     // Cubism calculates a queue entry's end time once, on its first frame.
-    const entry = manager.queueManager._motions[0];
-    this.#configureLoop(this.#activeMotion, entry);
+    this.#configureLoop(this.#activeMotion, this.#motionEntry());
   }
 
   #configureLoop(clip, entry) {

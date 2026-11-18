@@ -89,6 +89,12 @@
     <p class="animation-error error" data-animation-error role="status" hidden></p>
   </template>
 
+  <template id="motion-progress-template">
+    <input type="range" min="0" max="0" step="1" value="0" aria-label="动作进度" data-i18n-aria-label="motionProgress" disabled>
+    <input type="number" min="0" max="0" step="1" inputmode="numeric" value="0" aria-label="当前动作帧" data-i18n-aria-label="motionFrame" disabled>
+    <span data-last-frame class="muted"></span>
+  </template>
+
   <section id="background-popover" class="tool-popover glass" popover="auto" aria-labelledby="background-heading">
     <h2 id="background-heading" data-i18n="canvasBackground">画布背景</h2>
     <div class="background-swatches" aria-label="预设颜色" data-i18n-aria-label="backgroundPresets">
@@ -114,8 +120,10 @@
         <button id="show-parameters" type="button" aria-pressed="true" aria-controls="parameters-view" data-i18n="motionParameterTab" aria-label="动作参数" data-i18n-aria-label="motionParameters">动作参数</button>
         <button id="show-expression-parameters" type="button" aria-pressed="false" aria-controls="parameters-view" data-i18n="expressionParameterTab" aria-label="表情参数" data-i18n-aria-label="expressionParameters">表情参数</button>
         <button id="show-json" type="button" aria-pressed="false" aria-controls="json-view" data-i18n="snapshotTab" aria-label="JSON 快照" data-i18n-aria-label="snapshot">JSON 快照</button>
-        <button id="inspector-playback" type="button" disabled data-i18n="pause">暂停</button>
-        <button id="reset-parameters" type="button" data-i18n="resetAll">重置全部参数</button>
+        <div class="parameter-actions">
+          <button id="inspector-playback" type="button" disabled data-i18n="pause">暂停</button>
+          <button id="reset-parameters" type="button" data-i18n="resetAll">重置全部参数</button>
+        </div>
       </div>
       <section id="parameters-view" class="parameters-view" aria-label="实时参数" data-i18n-aria-label="liveParameters">
         <div class="parameter-toolbar">

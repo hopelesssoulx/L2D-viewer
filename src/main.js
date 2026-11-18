@@ -2,6 +2,7 @@ import { AnimationControls } from "./animation-controls.js";
 import { getLanguage, setLanguage, t, translatePage, ViewerError } from "./i18n.js";
 import { discoverLocalModels } from "./local-model-source.js";
 import { ModelStrip } from "./model-strip.js";
+import { setupMotionProgress } from "./motion-progress.js";
 import { ModelScene } from "./scene.js";
 import { ParameterPanel } from "./parameter-panel.js";
 import { setupTransformControls } from "./transform-controls.js";
@@ -49,6 +50,9 @@ const animation = new AnimationControls(
   $("animation-template"), [$("toolbar-animation"), $("inspector-animation")],
   () => scene?.selected, syncPlayback
 );
+const refreshMotionProgress = setupMotionProgress(
+  $("inspector-animation"), $("motion-progress-template"), () => scene?.selected, syncPlayback
+);
 const strip = new ModelStrip($("model-strip"), toggleSelection, (model, index) => {
   scene.reorder(model, index);
   strip.render(scene.models, scene.selected);
@@ -89,6 +93,7 @@ function setInspector(open) {
   if (open) {
     revealInspector();
     panel.refreshValues();
+    refreshMotionProgress();
   }
 }
 
@@ -104,6 +109,7 @@ function setTransform(open) {
 function syncPlayback() {
   const model = scene.selected;
   animation.sync();
+  refreshMotionProgress();
   const busy = model?.loadingMotion || model?.loadingExpression;
   add.disabled = loadingModels;
   copy.disabled = loadingModels || !model || busy;
@@ -306,7 +312,10 @@ if (scene) {
   });
 
   window.setInterval(() => {
-    if (!inspectorWindow.hidden && scene.selected) panel.refreshValues();
+    if (!inspectorWindow.hidden && scene.selected) {
+      panel.refreshValues();
+      refreshMotionProgress();
+    }
   }, 80);
 }
 
