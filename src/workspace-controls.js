@@ -53,16 +53,20 @@ export function setupToolbar(dock, toolbar, pin, reveal) {
   pin.addEventListener("click", () => {
     pinned = !pinned;
     pin.setAttribute("aria-pressed", pinned);
-    pin.title = pinned ? "取消固定后，移出功能栏会自动收起" : "开启后，功能栏会保持显示";
+    pin.title = pinned ? "取消固定后，移出功能栏会自动收起" : "开启后，功能栏会保持显示。鼠标移到网页顶边可展开。";
     if (pinned) expand(true);
     else scheduleCollapse();
   });
   reveal.addEventListener("pointerenter", (event) => {
     if (event.pointerType === "mouse") expand(true);
   });
-  reveal.addEventListener("click", () => {
+  function revealWithFocus() {
     expand(true);
     toolbar.querySelector("button:not(:disabled)")?.focus({ preventScroll: true });
+  }
+  reveal.addEventListener("click", revealWithFocus);
+  reveal.addEventListener("focus", () => {
+    if (reveal.matches(":focus-visible")) revealWithFocus();
   });
   dock.addEventListener("pointerenter", () => clearTimeout(timer));
   dock.addEventListener("pointerleave", scheduleCollapse);
@@ -82,8 +86,7 @@ export function setupTheme(button) {
   function setTheme(theme) {
     const dark = theme === "dark";
     root.dataset.theme = theme;
-    button.setAttribute("aria-pressed", dark);
-    button.textContent = dark ? "浅色" : "深色";
+    button.setAttribute("aria-checked", dark);
     button.title = dark ? "切换到浅色模式" : "切换到深色模式";
   }
 

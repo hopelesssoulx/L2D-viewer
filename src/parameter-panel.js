@@ -1,15 +1,17 @@
 const formatValue = (value) => String(Number(value.toFixed(5)));
+const svgNamespace = "http://www.w3.org/2000/svg";
 
 export class ParameterPanel {
   #model = null;
   #rows = [];
 
-  constructor({ view, search, count, hint, list }) {
+  constructor({ view, search, count, hint, list, onPlayback }) {
     this.view = view;
     this.search = search;
     this.count = count;
     this.hint = hint;
     this.list = list;
+    this.onPlayback = onPlayback;
     this.search.addEventListener("input", () => this.#filter());
   }
 
@@ -24,7 +26,7 @@ export class ParameterPanel {
   }
 
   #createRow(model, parameter) {
-    const { id, index, min, max, defaultValue } = parameter;
+    const { id, index, min, max, defaultValue, description } = parameter;
     const row = document.createElement("div");
     row.className = "parameter-row";
 
@@ -32,6 +34,7 @@ export class ParameterPanel {
     header.className = "parameter-header";
     const label = document.createElement("label");
     label.textContent = id;
+    label.title = description;
     const limits = document.createElement("small");
     limits.textContent = `${formatValue(min)} – ${formatValue(max)} · 默认 ${formatValue(defaultValue)}`;
     header.append(label, limits);
@@ -44,6 +47,7 @@ export class ParameterPanel {
     const number = document.createElement("input");
     number.type = "number";
     number.id = `parameter-${index}`;
+    number.setAttribute("aria-description", description);
     label.htmlFor = number.id;
 
     for (const input of [slider, number]) {
@@ -64,9 +68,25 @@ export class ParameterPanel {
       number.value = formatValue(model.valueAt(index));
     });
 
-    inputs.append(slider, number);
+    const reset = document.createElement("button");
+    reset.type = "button";
+    reset.className = "parameter-reset";
+    reset.title = "恢复默认值";
+    reset.setAttribute("aria-label", `重置 ${id}`);
+    const icon = document.createElementNS(svgNamespace, "svg");
+    icon.setAttribute("aria-hidden", "true");
+    const symbol = document.createElementNS(svgNamespace, "use");
+    symbol.setAttribute("href", "./assets/icons.svg#reset");
+    icon.append(symbol);
+    reset.append(icon);
+    reset.addEventListener("click", () => {
+      model.resetParameter(parameter);
+      this.onPlayback();
+    });
+
+    inputs.append(slider, number, reset);
     row.append(header, inputs);
-    return { row, slider, number, index, matches: true, filterKey: id.toLowerCase() };
+    return { row, slider, number, reset, index, matches: true, filterKey: id.toLowerCase() };
   }
 
   #filter() {
@@ -84,9 +104,10 @@ export class ParameterPanel {
   syncPlayback() {
     const canEdit = this.#model?.paused && !this.#model.loadingMotion;
     this.hint.textContent = canEdit ? "拖动滑块或输入数值调整当前姿势。" : "播放时实时更新，暂停后可编辑。";
-    for (const { slider, number } of this.#rows) {
+    for (const { slider, number, reset } of this.#rows) {
       slider.disabled = !canEdit;
       number.readOnly = !canEdit;
+      reset.disabled = this.#model.loadingMotion || this.#model.loadingExpression;
     }
     this.refreshValues();
   }

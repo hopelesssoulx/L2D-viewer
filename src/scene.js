@@ -118,7 +118,7 @@ export class ModelScene {
   async add(source) {
     const model = await ViewerModel.load(this.pixi, source);
     model.display.internalModel.coreModel.update();
-    return this.#attach(model, { bounds: measureModel(model.display), x: 0, y: 0, angle: 0 });
+    return this.#attach(model, { bounds: measureModel(model.display), x: 0, y: 0, angle: 0, size: 100 });
   }
 
   async copy(model) {
@@ -164,20 +164,21 @@ export class ModelScene {
 
   setPlacement(changes) {
     Object.assign(this.placement, changes);
+    this.placement.size = Math.min(1000, Math.max(10, this.placement.size));
     this.#place(this.selected);
     this.#drawSelection();
   }
 
   #place(model) {
     const { width, height } = this.#app.screen;
-    const { bounds, x, y, angle } = this.#placements.get(model);
+    const { bounds, x, y, angle, size } = this.#placements.get(model);
     const { display } = model;
     const top = Math.min(this.#toolbar.offsetHeight + 8, height * 0.32);
     const margin = Math.min(32, Math.max(14, width * 0.025));
     const scale = Math.min(width * 0.53 / bounds.width, (height - top) * 0.87 / bounds.height);
     display.pivot.set(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
     display.position.set(margin + bounds.width * scale / 2 + x, (height + top) / 2 + y);
-    display.scale.set(scale);
+    display.scale.set(scale * size / 100);
     display.angle = angle % 360;
   }
 

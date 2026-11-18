@@ -39,6 +39,7 @@ const panel = new ParameterPanel({
   count: $("parameter-count"),
   hint: $("parameter-hint"),
   list: $("parameter-list"),
+  onPlayback: syncPlayback,
 });
 const animation = new AnimationControls(
   $("animation-template"), [$("toolbar-animation"), $("inspector-animation")],
@@ -204,6 +205,11 @@ function setupPanelToggle(button, close, window, setOpen) {
 setupToolbar($("toolbar-dock"), toolbar, $("pin-toolbar"), $("reveal-toolbar"));
 setupInspectorDrag(inspectorWindow, $("inspector-bar"), toolbar);
 setupTheme($("theme-toggle"));
+new ResizeObserver(() => {
+  if (!transformWindow.hidden) {
+    document.documentElement.style.setProperty("--transform-height", `${transformWindow.offsetHeight}px`);
+  }
+}).observe(transformWindow);
 setupBackground(stage, $("background-popover"), $("background-input"), $("upload-background"), $("background-status"));
 setupPanelToggle(toggleInspector, $("close-inspector"), inspectorWindow, setInspector);
 setupPanelToggle(toggleTransform, $("close-transform"), transformWindow, setTransform);

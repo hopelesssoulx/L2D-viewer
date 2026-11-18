@@ -1,3 +1,5 @@
+import { describeParameter, readParameterDescriptions } from "./parameter-descriptions.js";
+
 function prepareSettings(json, source, live2d) {
   if (!live2d.Cubism4ModelSettings.isValidJSON(json)) {
     throw new Error("模型描述文件缺少有效的 Moc 或 Textures 配置。");
@@ -52,7 +54,9 @@ export class ViewerModel {
     const display = new live2d.Live2DModel(options);
     let textureURLs = [];
     try {
-      const settings = prepareSettings(await source.readSettings(), source, live2d);
+      const modelJSON = await source.readSettings();
+      const settings = prepareSettings(modelJSON, source, live2d);
+      const descriptions = readParameterDescriptions(source, modelJSON.FileReferences.DisplayInfo);
       textureURLs = settings.textures.map((reference) => settings.resolveURL(reference));
 
       // Complete texture requests before the adapter starts decoding the moc.
@@ -67,7 +71,7 @@ export class ViewerModel {
       display.on("physicsLoadError", () => failedOptionals.push(settings.physics));
       await live2d.Live2DFactory.setupLive2DModel(display, settings, options);
       if (failedOptionals.length) throw new Error(`无法读取模型文件：${failedOptionals.join("、")}`);
-      return new ViewerModel(display, source, live2d.MotionPriority.FORCE);
+      return new ViewerModel(display, source, live2d.MotionPriority.FORCE, await descriptions);
     } catch (error) {
       try {
         if (display.internalModel) display.destroy();
@@ -89,7 +93,7 @@ export class ViewerModel {
   #expressionManager;
   #expression;
 
-  constructor(display, source, motionPriority) {
+  constructor(display, source, motionPriority, descriptions) {
     this.display = display;
     this.source = source;
     this.name = source.name;
@@ -108,6 +112,7 @@ export class ViewerModel {
     this.parameters = Array.from(parameters.ids, (id, index) => ({
       id,
       index,
+      description: describeParameter(id, descriptions),
       min: parameters.minimumValues[index],
       max: parameters.maximumValues[index],
       defaultValue: parameters.defaultValues[index],
@@ -181,6 +186,11 @@ export class ViewerModel {
     const clamped = Math.min(parameter.max, Math.max(parameter.min, value));
     this.#baseValues[parameter.index] = this.#values[parameter.index] = clamped;
     this.#applyPose();
+  }
+
+  resetParameter(parameter) {
+    this.paused = true;
+    this.setParameter(parameter, parameter.defaultValue);
   }
 
   resetParameters() {

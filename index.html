@@ -43,7 +43,10 @@
           <button id="toggle-inspector" type="button" aria-expanded="false" aria-controls="inspector" disabled>参数<span class="wide-label">检查器</span></button>
           <button id="toggle-transform" type="button" aria-expanded="false" aria-controls="transform-window" disabled>变换</button>
           <button id="background-tools" type="button" popovertarget="background-popover">背景</button>
-          <button id="theme-toggle" type="button" aria-label="深色模式" aria-pressed="false">深色</button>
+          <button id="theme-toggle" type="button" class="theme-switch" role="switch" aria-label="深色模式" aria-checked="false">
+            <svg aria-hidden="true"><use href="./assets/icons.svg#sun"></use></svg>
+            <svg aria-hidden="true"><use href="./assets/icons.svg#moon"></use></svg>
+          </button>
           <div class="tool-separator" aria-hidden="true"></div>
           <button id="pin-toolbar" type="button" aria-label="固定功能栏" aria-pressed="true" title="取消固定后，移出功能栏会自动收起">固定</button>
         </div>
@@ -55,9 +58,7 @@
         <span id="playback-state" class="playback-state" hidden></span>
       </div>
     </div>
-    <button id="reveal-toolbar" type="button" class="toolbar-tab glass" aria-controls="toolbar" hidden>
-      <span class="tab-mark" aria-hidden="true"></span> 功能栏
-    </button>
+    <button id="reveal-toolbar" type="button" class="toolbar-reveal" aria-controls="toolbar" aria-label="展开功能栏" hidden></button>
   </header>
 
   <input id="folder-input" type="file" webkitdirectory multiple hidden>
@@ -126,8 +127,8 @@
 
   <aside id="transform-window" class="transform-window glass" aria-labelledby="transform-heading" hidden>
     <div class="inspector-bar">
-      <h2 id="transform-heading">移动与旋转</h2>
-      <button id="close-transform" type="button" class="quiet close" aria-label="关闭移动与旋转">×</button>
+      <h2 id="transform-heading">模型变换</h2>
+      <button id="close-transform" type="button" class="quiet close" aria-label="关闭模型变换">×</button>
     </div>
     <div class="transform-content">
       <div class="transform-position">
@@ -143,11 +144,17 @@
           <button type="button" class="reset-position" data-reset="position" title="重置到展示区左侧">重置位置</button>
         </div>
       </div>
-      <div class="transform-rotation">
+      <div class="transform-line">
         <button type="button" aria-label="逆时针旋转" data-axis="angle" data-increment="-5">↶</button>
         <button type="button" aria-label="顺时针旋转" data-axis="angle" data-increment="5">↷</button>
         <label class="transform-field">角度 <input type="number" step="any" data-placement-field="angle" aria-label="旋转角度"><span>°</span></label>
         <button type="button" data-reset="rotation">重置旋转</button>
+      </div>
+      <div class="transform-line">
+        <button type="button" aria-label="缩小模型" data-axis="size" data-increment="-5">−</button>
+        <button type="button" aria-label="放大模型" data-axis="size" data-increment="5">+</button>
+        <label class="transform-field">大小 <input type="number" step="any" data-placement-field="size" aria-label="模型大小百分比"><span>%</span></label>
+        <button type="button" data-reset="size">重置大小</button>
       </div>
     </div>
   </aside>
