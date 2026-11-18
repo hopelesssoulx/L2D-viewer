@@ -1,29 +1,26 @@
+import { AnimationControls } from "./animation-controls.js";
 import { discoverLocalModels } from "./local-model-source.js";
+import { ModelStrip } from "./model-strip.js";
 import { ModelScene } from "./scene.js";
 import { ParameterPanel } from "./parameter-panel.js";
+import { setupTransformControls } from "./transform-controls.js";
 import { setupBackground, setupInspectorDrag, setupTheme, setupToolbar } from "./workspace-controls.js";
 
 const $ = (id) => document.getElementById(id);
 
 const add = $("add-models");
 const folder = $("folder-input");
-const modelSelect = $("model-select");
+const toolbar = $("toolbar");
 const stage = $("stage");
 const report = $("load-report");
 const dismissReport = $("dismiss-report");
 const inspectorWindow = $("inspector");
 const toggleInspector = $("toggle-inspector");
-const inspectorEmpty = $("inspector-empty");
-const inspectorContent = $("inspector-content");
-const motionTools = $("motion-tools");
-const motionSelect = $("motion-select");
-const motionError = $("motion-error");
-const expressionTools = $("expression-tools");
-const expressionSelect = $("expression-select");
-const expressionError = $("expression-error");
-const play = $("play-motion");
-const toggle = $("toggle-playback");
+const transformWindow = $("transform-window");
+const toggleTransform = $("toggle-transform");
+const togglePlayback = $("toggle-playback");
 const reset = $("reset-parameters");
+const copy = $("copy-model");
 const remove = $("remove-model");
 const playbackState = $("playback-state");
 const showParameters = $("show-parameters");
@@ -34,6 +31,8 @@ const jsonStatus = $("json-status");
 const exportJSON = $("export-json");
 const importJSON = $("import-json");
 
+let scene;
+let loadingModels = false;
 const panel = new ParameterPanel({
   view: $("parameters-view"),
   search: $("parameter-search"),
@@ -41,7 +40,17 @@ const panel = new ParameterPanel({
   hint: $("parameter-hint"),
   list: $("parameter-list"),
 });
-let scene;
+const animation = new AnimationControls(
+  $("animation-template"), [$("toolbar-animation"), $("inspector-animation")],
+  () => scene?.selected, syncPlayback
+);
+const strip = new ModelStrip($("model-strip"), toggleSelection, (model, index) => {
+  scene.reorder(model, index);
+  strip.render(scene.models, scene.selected);
+});
+const refreshTransform = setupTransformControls(
+  transformWindow, () => scene?.placement, (changes) => scene.setPlacement(changes)
+);
 
 function reportLoad(message, errors = []) {
   report.hidden = !message;
@@ -67,78 +76,80 @@ function setInspector(open) {
   if (open) panel.refreshValues();
 }
 
+function setTransform(open) {
+  transformWindow.hidden = !open;
+  toggleTransform.setAttribute("aria-expanded", open);
+  if (open) refreshTransform();
+}
+
 function syncPlayback() {
   const model = scene.selected;
-  motionTools.disabled = !model?.motions.length;
-  expressionTools.disabled = !model?.expressions.length;
-  if (motionTools.disabled) $("motion-popover").hidePopover();
-  if (expressionTools.disabled) $("expression-popover").hidePopover();
-  toggle.disabled = !model || model.loadingMotion;
-
-  playbackState.hidden = remove.hidden = !model;
-  toggle.textContent = model?.paused ? "继续" : "暂停";
-  if (!model) return;
+  animation.sync();
+  const busy = model?.loadingMotion || model?.loadingExpression;
+  add.disabled = loadingModels;
+  copy.disabled = loadingModels || !model || busy;
+  remove.disabled = loadingModels || !model || busy;
+  togglePlayback.disabled = !model || model.loadingMotion;
+  togglePlayback.textContent = model?.paused ? "继续" : "暂停";
+  toggleInspector.disabled = toggleTransform.disabled = !model;
+  if (!model) {
+    playbackState.textContent = "";
+    return;
+  }
 
   const { paused, loadingMotion, loadingExpression } = model;
   playbackState.textContent = loadingMotion ? "加载动作中" : loadingExpression ? "加载表情中" : paused ? "已暂停" : "实时更新";
   playbackState.dataset.paused = paused;
-  play.disabled = motionSelect.disabled = loadingMotion || motionTools.disabled;
-  expressionSelect.disabled = loadingExpression || expressionTools.disabled;
   reset.disabled = importJSON.disabled = loadingMotion;
-  remove.disabled = loadingMotion || loadingExpression;
-  motionError.textContent = model.motionError;
-  motionError.hidden = !model.motionError;
-  expressionError.textContent = model.expressionError;
-  expressionError.hidden = !model.expressionError;
   panel.syncPlayback();
 }
 
 function updateSelection() {
   const model = scene.selected;
-  modelSelect.value = model ? scene.models.indexOf(model) : "";
-  modelSelect.title = model?.source.path ?? "";
-  inspectorEmpty.hidden = Boolean(model);
-  inspectorContent.hidden = !model;
+  strip.render(scene.models, model);
+  strip.reveal(model);
   panel.select(model);
-  if (model) {
-    motionSelect.replaceChildren(...model.motions.map(({ label }, index) => new Option(label, index)));
-    motionSelect.value = model.motionChoice;
-    expressionSelect.replaceChildren(new Option("无表情", -1),
-      ...model.expressions.map((label, index) => new Option(label, index)));
-    expressionSelect.value = model.expressionChoice;
+  animation.select();
+  if (!model) {
+    setInspector(false);
+    setTransform(false);
+  } else {
+    refreshTransform();
     setJSONStatus("粘贴参数 JSON 后导入，模型会暂停并应用数值。");
   }
   syncPlayback();
 }
 
-function selectModel(model) {
-  if (scene.selected === model) return;
+function selectModel(model, openTransform = false) {
+  const previous = scene.selected;
   scene.select(model);
   updateSelection();
+  if (model && (openTransform || !previous)) setTransform(true);
+}
+
+function toggleSelection(model) {
+  selectModel(scene.selected === model ? null : model);
 }
 
 function updateModelList() {
   const count = scene.models.length;
   $("model-count").textContent = `${count} 个模型`;
   $("stage-empty").hidden = count > 0;
-  modelSelect.disabled = !count;
-  modelSelect.replaceChildren(...(count
-    ? scene.models.map((model, index) => new Option(model.name, index))
-    : [new Option("未选中", "")]));
-  modelSelect.value = count ? scene.models.indexOf(scene.selected) : "";
+  strip.render(scene.models, scene.selected);
 }
 
 async function importFolder(files) {
-  add.disabled = true;
+  loadingModels = true;
+  syncPlayback();
   reportLoad("正在读取模型文件夹…");
   const errors = [];
+  let latest;
   try {
     const sources = discoverLocalModels(files);
     for (const source of sources) {
       try {
-        const model = await scene.add(source);
+        latest = await scene.add(source);
         updateModelList();
-        if (!scene.selected) selectModel(model);
       } catch (error) {
         errors.push(`${source.path}：${error.message}`);
       }
@@ -146,8 +157,28 @@ async function importFolder(files) {
   } catch (error) {
     errors.push(error.message);
   } finally {
-    add.disabled = false;
+    loadingModels = false;
+    if (latest) selectModel(latest, true);
+    else syncPlayback();
     reportLoad(errors.length ? "有模型加载失败。" : "", errors);
+  }
+}
+
+async function copySelected() {
+  const original = scene.selected;
+  loadingModels = true;
+  syncPlayback();
+  reportLoad("正在复制模型…");
+  try {
+    const model = await scene.copy(original);
+    updateModelList();
+    selectModel(model, true);
+    reportLoad("");
+  } catch (error) {
+    reportLoad("复制模型失败。", [`${original.name}：${error.message}`]);
+  } finally {
+    loadingModels = false;
+    syncPlayback();
   }
 }
 
@@ -159,19 +190,23 @@ function setPanel(showSnapshot) {
   panel.refreshValues();
 }
 
-setupToolbar($("toolbar-dock"), $("toolbar"), $("pin-toolbar"), $("reveal-toolbar"));
-setupInspectorDrag(inspectorWindow, $("inspector-bar"), $("toolbar"));
+function setupPanelToggle(button, close, window, setOpen) {
+  button.addEventListener("click", (event) => {
+    setOpen(window.hidden);
+    if (!window.hidden && event.detail === 0) close.focus({ preventScroll: true });
+  });
+  close.addEventListener("click", () => {
+    setOpen(false);
+    (toolbar.inert ? $("reveal-toolbar") : button).focus({ preventScroll: true });
+  });
+}
+
+setupToolbar($("toolbar-dock"), toolbar, $("pin-toolbar"), $("reveal-toolbar"));
+setupInspectorDrag(inspectorWindow, $("inspector-bar"), toolbar);
 setupTheme($("theme-toggle"));
 setupBackground(stage, $("background-popover"), $("background-input"), $("upload-background"), $("background-status"));
-
-toggleInspector.addEventListener("click", (event) => {
-  setInspector(inspectorWindow.hidden);
-  if (!inspectorWindow.hidden && event.detail === 0) $("close-inspector").focus({ preventScroll: true });
-});
-$("close-inspector").addEventListener("click", () => {
-  setInspector(false);
-  ($("toolbar").inert ? $("reveal-toolbar") : toggleInspector).focus({ preventScroll: true });
-});
+setupPanelToggle(toggleInspector, $("close-inspector"), inspectorWindow, setInspector);
+setupPanelToggle(toggleTransform, $("close-transform"), transformWindow, setTransform);
 dismissReport.addEventListener("click", () => { report.hidden = true; });
 
 try {
@@ -180,7 +215,7 @@ try {
     throw new Error("无法加载渲染依赖，请检查网络后刷新页面。");
   }
   pixi.live2d.config.sound = false;
-  scene = new ModelScene(pixi, stage, selectModel);
+  scene = new ModelScene(pixi, stage, toolbar, toggleSelection);
 } catch (error) {
   add.disabled = true;
   reportLoad("无法启动查看器。", [error.message]);
@@ -191,27 +226,9 @@ if (scene) {
   folder.addEventListener("change", () => {
     const files = Array.from(folder.files);
     folder.value = "";
-    if (files.length) void importFolder(files);
+    if (files.length && !loadingModels) void importFolder(files);
   });
-  modelSelect.addEventListener("change", () => selectModel(scene.models[Number(modelSelect.value)]));
-  motionSelect.addEventListener("change", () => {
-    scene.selected.motionChoice = Number(motionSelect.value);
-  });
-  play.addEventListener("click", async () => {
-    const pending = scene.selected.playMotion();
-    syncPlayback();
-    await pending;
-    syncPlayback();
-  });
-  expressionSelect.addEventListener("change", async () => {
-    const model = scene.selected;
-    const pending = model.setExpression(Number(expressionSelect.value));
-    syncPlayback();
-    await pending;
-    if (scene.selected === model) expressionSelect.value = model.expressionChoice;
-    syncPlayback();
-  });
-  toggle.addEventListener("click", () => {
+  togglePlayback.addEventListener("click", () => {
     scene.selected.paused = !scene.selected.paused;
     syncPlayback();
   });
@@ -219,11 +236,13 @@ if (scene) {
     scene.selected.resetParameters();
     syncPlayback();
   });
+  copy.addEventListener("click", copySelected);
   remove.addEventListener("click", () => {
     scene.remove(scene.selected);
     updateModelList();
     updateSelection();
-    (scene.selected ? modelSelect : add).focus({ preventScroll: true });
+    if (scene.selected) strip.focus(scene.selected);
+    else add.focus({ preventScroll: true });
   });
   showParameters.addEventListener("click", () => setPanel(false));
   showJSON.addEventListener("click", () => setPanel(true));

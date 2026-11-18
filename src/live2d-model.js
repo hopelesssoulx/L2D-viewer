@@ -150,6 +150,28 @@ export class ViewerModel {
     if (!this.paused && !this.loadingMotion) this.display.update(deltaMS);
   }
 
+  async clone(pixi) {
+    const values = this.#values.slice();
+    const baseValues = this.#baseValues.slice();
+    const opacities = this.#core.getModel().parts.opacities.slice();
+    const { motionChoice, expressionChoice } = this;
+    const copy = await ViewerModel.load(pixi, this.source.clone());
+    try {
+      copy.paused = true;
+      await copy.setExpression(expressionChoice);
+      if (copy.expressionError) throw new Error(copy.expressionError);
+      copy.motionChoice = motionChoice;
+      copy.#values.set(values);
+      copy.#baseValues.set(baseValues);
+      copy.#core.getModel().parts.opacities.set(opacities);
+      copy.#applyPose();
+      return copy;
+    } catch (error) {
+      copy.dispose();
+      throw error;
+    }
+  }
+
   valueAt(index) {
     return this.#values[index];
   }

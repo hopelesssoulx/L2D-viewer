@@ -41,11 +41,14 @@ export function setupToolbar(dock, toolbar, pin, reveal) {
       if (event.newState === "closed") scheduleCollapse();
     });
   }
-  window.addEventListener("resize", () => {
+  function updateGeometry() {
+    document.documentElement.style.setProperty("--toolbar-height", `${toolbar.offsetHeight}px`);
     for (const { trigger, panel } of popovers) {
       if (panel.matches(":popover-open")) positionPopover(trigger, panel);
     }
-  });
+  }
+  window.addEventListener("resize", updateGeometry);
+  new ResizeObserver(updateGeometry).observe(toolbar);
 
   pin.addEventListener("click", () => {
     pinned = !pinned;

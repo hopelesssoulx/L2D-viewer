@@ -31,26 +31,27 @@
   <header id="toolbar-dock" class="toolbar-dock" data-expanded="true">
     <div id="toolbar" class="toolbar glass">
       <nav class="tool-row" aria-label="功能栏">
-        <button id="add-models" type="button" class="primary" aria-label="导入文件夹">
-          <span class="tool-icon" aria-hidden="true">＋</span>导入<span class="wide-label">文件夹</span>
-        </button>
-        <div class="tool-separator" aria-hidden="true"></div>
-        <button id="motion-tools" type="button" popovertarget="motion-popover" disabled>动作</button>
-        <button id="expression-tools" type="button" popovertarget="expression-popover" disabled>表情</button>
-        <button id="toggle-playback" type="button" disabled>暂停</button>
-        <button id="remove-model" type="button" class="remove" aria-label="移除选中的模型" hidden>移除</button>
+        <button id="add-models" type="button" class="primary add-models" aria-label="导入文件夹" title="导入文件夹">+</button>
+        <div id="toolbar-animation" class="animation-controls"></div>
+        <div class="model-actions">
+          <button id="toggle-playback" type="button" disabled>暂停</button>
+          <button id="copy-model" type="button" aria-label="复制选中的模型" disabled>复制</button>
+          <button id="remove-model" type="button" aria-label="移除选中的模型" disabled>移除</button>
+        </div>
         <div class="tool-spacer"></div>
-        <button id="toggle-inspector" type="button" aria-expanded="false" aria-controls="inspector">参数<span class="wide-label">检查器</span></button>
-        <button id="background-tools" type="button" popovertarget="background-popover">背景</button>
-        <button id="theme-toggle" type="button" aria-label="深色模式" aria-pressed="false">深色</button>
-        <div class="tool-separator" aria-hidden="true"></div>
-        <button id="pin-toolbar" type="button" aria-label="固定功能栏" aria-pressed="true" title="取消固定后，移出功能栏会自动收起">固定</button>
+        <div class="view-actions">
+          <button id="toggle-inspector" type="button" aria-expanded="false" aria-controls="inspector" disabled>参数<span class="wide-label">检查器</span></button>
+          <button id="toggle-transform" type="button" aria-expanded="false" aria-controls="transform-window" disabled>变换</button>
+          <button id="background-tools" type="button" popovertarget="background-popover">背景</button>
+          <button id="theme-toggle" type="button" aria-label="深色模式" aria-pressed="false">深色</button>
+          <div class="tool-separator" aria-hidden="true"></div>
+          <button id="pin-toolbar" type="button" aria-label="固定功能栏" aria-pressed="true" title="取消固定后，移出功能栏会自动收起">固定</button>
+        </div>
       </nav>
       <div class="model-summary">
         <span id="model-count" class="model-count">0 个模型</span>
         <div class="tool-separator" aria-hidden="true"></div>
-        <label for="model-select">当前模型</label>
-        <select id="model-select" disabled><option>未选中</option></select>
+        <div id="model-strip" class="model-strip" role="group" aria-label="模型图层，右侧在上层"></div>
         <span id="playback-state" class="playback-state" hidden></span>
       </div>
     </div>
@@ -62,20 +63,20 @@
   <input id="folder-input" type="file" webkitdirectory multiple hidden>
   <input id="background-input" type="file" accept="image/*" hidden>
 
-  <section id="motion-popover" class="tool-popover glass" popover="auto" aria-labelledby="motion-heading">
-    <h2 id="motion-heading">动作</h2>
-    <div class="inline-controls">
-      <select id="motion-select" aria-label="选择动作"></select>
-      <button id="play-motion" type="button" class="primary">播放</button>
+  <template id="animation-template">
+    <div class="animation-motion">
+      <label class="animation-field">
+        <span>动作</span>
+        <select data-motion-select></select>
+      </label>
+      <button type="button" data-play-motion>播放</button>
     </div>
-    <p id="motion-error" class="error inline-message" role="status" hidden></p>
-  </section>
-
-  <section id="expression-popover" class="tool-popover glass" popover="auto" aria-labelledby="expression-heading">
-    <h2 id="expression-heading">表情</h2>
-    <select id="expression-select" aria-label="选择表情"></select>
-    <p id="expression-error" class="error inline-message" role="status" hidden></p>
-  </section>
+    <label class="animation-field">
+      <span>表情</span>
+      <select data-expression-select></select>
+    </label>
+    <p class="animation-error error" data-animation-error role="status" hidden></p>
+  </template>
 
   <section id="background-popover" class="tool-popover glass" popover="auto" aria-labelledby="background-heading">
     <h2 id="background-heading">画布背景</h2>
@@ -96,8 +97,8 @@
       <h2 id="inspector-heading">参数检查器</h2>
       <button id="close-inspector" type="button" class="quiet close" aria-label="关闭参数检查器">×</button>
     </div>
-    <p id="inspector-empty" class="inspector-empty">导入并选中模型后，这里会显示实时参数。</p>
-    <div id="inspector-content" class="inspector-content" hidden>
+    <div class="inspector-content">
+      <div id="inspector-animation" class="animation-controls"></div>
       <div class="panel-switch" aria-label="检查器面板">
         <button id="show-parameters" type="button" aria-pressed="true" aria-controls="parameters-view">实时参数</button>
         <button id="show-json" type="button" aria-pressed="false" aria-controls="json-view">JSON 快照</button>
@@ -123,7 +124,35 @@
     </div>
   </aside>
 
-  <section id="load-report" class="load-report glass" aria-label="导入状态" hidden>
+  <aside id="transform-window" class="transform-window glass" aria-labelledby="transform-heading" hidden>
+    <div class="inspector-bar">
+      <h2 id="transform-heading">移动与旋转</h2>
+      <button id="close-transform" type="button" class="quiet close" aria-label="关闭移动与旋转">×</button>
+    </div>
+    <div class="transform-content">
+      <div class="transform-position">
+        <div class="direction-pad" role="group" aria-label="移动方向">
+          <button type="button" class="move-up" aria-label="向上移动" data-axis="y" data-increment="-10">↑</button>
+          <button type="button" class="move-left" aria-label="向左移动" data-axis="x" data-increment="-10">←</button>
+          <button type="button" class="move-down" aria-label="向下移动" data-axis="y" data-increment="10">↓</button>
+          <button type="button" class="move-right" aria-label="向右移动" data-axis="x" data-increment="10">→</button>
+        </div>
+        <div class="position-fields">
+          <label class="transform-field">X <input type="number" step="any" data-placement-field="x" aria-label="横向位置"><span>px</span></label>
+          <label class="transform-field">Y <input type="number" step="any" data-placement-field="y" aria-label="纵向位置"><span>px</span></label>
+          <button type="button" class="reset-position" data-reset="position" title="重置到展示区左侧">重置位置</button>
+        </div>
+      </div>
+      <div class="transform-rotation">
+        <button type="button" aria-label="逆时针旋转" data-axis="angle" data-increment="-5">↶</button>
+        <button type="button" aria-label="顺时针旋转" data-axis="angle" data-increment="5">↷</button>
+        <label class="transform-field">角度 <input type="number" step="any" data-placement-field="angle" aria-label="旋转角度"><span>°</span></label>
+        <button type="button" data-reset="rotation">重置旋转</button>
+      </div>
+    </div>
+  </aside>
+
+  <section id="load-report" class="load-report glass" aria-label="模型加载状态" hidden>
     <div class="report-header">
       <p id="load-message" role="status"></p>
       <button id="dismiss-report" type="button" class="quiet close" aria-label="关闭导入提示" hidden>×</button>

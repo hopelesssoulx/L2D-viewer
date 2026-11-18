@@ -48,6 +48,10 @@ class LocalModelSource {
     }
   }
 
+  clone() {
+    return new LocalModelSource(this.file, this.#filesByPath);
+  }
+
   fileURL(reference) {
     const file = findFile(this.#filesByPath, this.path, reference);
     if (!file) throw new Error(`文件夹中缺少模型引用的文件：${reference}`);
