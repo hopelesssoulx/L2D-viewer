@@ -34,7 +34,7 @@
         <button id="add-models" type="button" class="primary add-models" aria-label="导入文件夹" data-i18n-aria-label="importFolder" title="导入文件夹" data-i18n-title="importFolder">+</button>
         <div id="toolbar-animation" class="animation-controls"></div>
         <div class="model-actions">
-          <button id="toggle-playback" type="button" disabled data-i18n="pause">暂停</button>
+          <button id="toggle-playback" type="button" disabled data-i18n="pause" hidden>暂停</button>
           <button id="copy-model" type="button" aria-label="复制选中的模型" data-i18n-aria-label="copyModel" disabled data-i18n="copy">复制</button>
           <button id="remove-model" type="button" aria-label="移除选中的模型" data-i18n-aria-label="removeModel" disabled data-i18n="remove">移除</button>
         </div>
@@ -76,10 +76,16 @@
       </label>
       <button type="button" data-play-motion data-i18n="replay">（重）播放</button>
     </div>
-    <label class="animation-field">
-      <span data-i18n="expression">表情</span>
-      <select data-expression-select></select>
-    </label>
+    <div class="animation-expression">
+      <label class="animation-loop">
+        <input type="checkbox" class="toggle-switch" role="switch" data-motion-loop aria-label="动作循环" data-i18n-aria-label="motionLoop" autocomplete="off" checked>
+        <span data-motion-loop-status></span>
+      </label>
+      <label class="animation-field">
+        <span data-i18n="expression">表情</span>
+        <select data-expression-select></select>
+      </label>
+    </div>
     <p class="animation-error error" data-animation-error role="status" hidden></p>
   </template>
 
@@ -163,7 +169,7 @@
       </div>
       <label class="canvas-control" title="拖动模型移动，在模型上滚动缩放" data-i18n-title="mouseControlHint">
         <span data-i18n="mouseControls">鼠标操控</span>
-        <input id="canvas-mouse" class="canvas-switch" type="checkbox" role="switch" autocomplete="off">
+        <input id="canvas-mouse" class="toggle-switch" type="checkbox" role="switch" autocomplete="off">
       </label>
     </div>
   </aside>

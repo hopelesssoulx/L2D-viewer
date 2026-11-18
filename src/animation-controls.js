@@ -13,15 +13,18 @@ export class AnimationControls {
       const motion = host.querySelector("[data-motion-select]");
       const expression = host.querySelector("[data-expression-select]");
       const play = host.querySelector("[data-play-motion]");
+      const loop = host.querySelector("[data-motion-loop]");
+      const loopStatus = host.querySelector("[data-motion-loop-status]");
       const error = host.querySelector("[data-animation-error]");
       motion.addEventListener("change", () =>
         this.#run((model) => model.playMotion(Number(motion.value)))
       );
       play.addEventListener("click", () => this.#run((model) => model.playMotion()));
+      loop.addEventListener("change", () => this.#run((model) => model.setMotionLoop(loop.checked)));
       expression.addEventListener("change", () =>
         this.#run((model) => model.setExpression(Number(expression.value)))
       );
-      return { motion, expression, play, error };
+      return { motion, expression, play, loop, loopStatus, error };
     });
     this.select();
   }
@@ -30,9 +33,7 @@ export class AnimationControls {
     const model = this.#getModel();
     for (const { motion, expression } of this.#pickers) {
       const motions = model?.motions.map(({ label }, index) => new Option(label, index)) ?? [];
-      const prompt = new Option(t(motions.length ? "selectMotion" : "noMotion"), -1);
-      prompt.disabled = Boolean(motions.length);
-      motion.replaceChildren(prompt, ...motions);
+      motion.replaceChildren(...(motions.length ? motions : [new Option(t("noMotion"), -1)]));
       expression.replaceChildren(new Option(t("noExpression"), -1),
         ...(model?.expressions.map((label, index) => new Option(label, index)) ?? []));
     }
@@ -41,9 +42,12 @@ export class AnimationControls {
 
   sync() {
     const model = this.#getModel();
-    for (const { motion, expression, play, error } of this.#pickers) {
+    for (const { motion, expression, play, loop, loopStatus, error } of this.#pickers) {
       motion.disabled = !model?.motions.length || model.loadingMotion;
       play.disabled = motion.disabled || model.motionChoice < 0;
+      loop.disabled = motion.disabled;
+      loop.checked = model?.loopMotion ?? true;
+      loopStatus.textContent = t(loop.checked ? "loopOn" : "loopOff");
       expression.disabled = !model?.expressions.length || model.loadingExpression;
       motion.value = model?.motionChoice ?? -1;
       expression.value = model?.expressionChoice ?? -1;

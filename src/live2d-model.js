@@ -93,6 +93,7 @@ export class ViewerModel {
   #baseValues;
   #animationValues;
   #motionPriority;
+  #activeMotion;
   #expressionManager;
   #expression;
   #expressionFade;
@@ -106,6 +107,7 @@ export class ViewerModel {
     this.paused = false;
     this.loadingMotion = false;
     this.motionChoice = -1;
+    this.loopMotion = true;
     this.motionError = null;
     this.loadingExpression = false;
     this.expressionChoice = -1;
@@ -220,13 +222,14 @@ export class ViewerModel {
     const values = this.#values.slice();
     const baseValues = this.#baseValues.slice();
     const opacities = this.#core.getModel().parts.opacities.slice();
-    const { motionChoice, expressionChoice } = this;
+    const { motionChoice, loopMotion, expressionChoice } = this;
     const copy = await ViewerModel.load(pixi, this.source.clone());
     try {
       copy.paused = true;
       await copy.setExpression(expressionChoice, { immediate: true });
       if (copy.expressionError) throw copy.expressionError;
       copy.motionChoice = motionChoice;
+      copy.loopMotion = loopMotion;
       copy.#values.set(values);
       copy.#baseValues.set(baseValues);
       copy.#core.getModel().parts.opacities.set(opacities);
@@ -319,15 +322,43 @@ export class ViewerModel {
     this.motionError = null;
     try {
       const manager = this.display.internalModel.motionManager;
-      if (!await manager.loadMotion(motion.group, motion.index)) throw new ViewerError("motionFailed");
+      const clip = await manager.loadMotion(motion.group, motion.index);
+      if (!clip) throw new ViewerError("motionFailed");
       manager.stopAllMotions();
+      this.#activeMotion = undefined;
+      this.#configureLoop(clip);
       const started = await this.display.motion(motion.group, motion.index, this.#motionPriority);
       if (!started) throw new ViewerError("motionFailed");
+      this.#activeMotion = clip;
       this.paused = false;
     } catch (error) {
       this.motionError = error;
     } finally {
       this.loadingMotion = false;
+    }
+  }
+
+  setMotionLoop(enabled) {
+    this.loopMotion = enabled;
+    const manager = this.display.internalModel.motionManager;
+    if (!this.#activeMotion) return;
+    if (manager.isFinished()) {
+      if (enabled && !this.paused) return this.playMotion();
+      return;
+    }
+
+    // Cubism calculates a queue entry's end time once, on its first frame.
+    const entry = manager.queueManager._motions[0];
+    this.#configureLoop(this.#activeMotion, entry);
+  }
+
+  #configureLoop(clip, entry) {
+    const duration = clip.getLoopDuration();
+    const hasDuration = Number.isFinite(duration) && duration > 0;
+    const loop = this.loopMotion && hasDuration;
+    clip.setIsLoop(loop);
+    if (entry?.isStarted()) {
+      entry.setEndTime(loop || !hasDuration ? -1 : entry.getStartTime() + duration);
     }
   }
 

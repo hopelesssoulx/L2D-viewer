@@ -187,7 +187,20 @@ button.primary:hover:not(:disabled) { background: var(--primary-hover); }
 .tool-spacer { flex: 1 1 auto; }
 .animation-controls { display: flex; align-items: center; gap: 10px; min-width: 0; }
 #toolbar-animation { padding-inline: 6px; gap: 12px; }
-.animation-motion, .animation-field { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.animation-motion, .animation-expression, .animation-field, .animation-loop {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.animation-loop {
+  flex: none;
+  color: var(--muted);
+  font-size: .82rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.animation-loop span { min-width: 3em; }
 .animation-field { color: var(--muted); font-size: .82rem; white-space: nowrap; }
 .animation-field select {
   min-height: 32px;
@@ -381,8 +394,8 @@ button.primary:hover:not(:disabled) { background: var(--primary-hover); }
   padding: 9px 12px;
   border-bottom: 1px solid var(--line);
 }
-#inspector-animation .animation-motion { flex: 1 1 56%; }
-#inspector-animation > .animation-field { flex: 1 1 38%; }
+#inspector-animation .animation-motion { flex: 1 1 44%; }
+#inspector-animation .animation-expression { flex: 1 1 51%; }
 #inspector-animation .animation-field { flex-grow: 1; }
 #inspector-animation .animation-field select { flex: 1; width: 0; }
 #inspector-animation .animation-error { flex-basis: 100%; }
@@ -463,8 +476,9 @@ button.primary:hover:not(:disabled) { background: var(--primary-hover); }
   font-size: .84rem;
   cursor: pointer;
 }
-.canvas-control .canvas-switch {
+input.toggle-switch {
   position: relative;
+  flex: none;
   width: 33px;
   height: 19px;
   margin: 0;
@@ -472,7 +486,7 @@ button.primary:hover:not(:disabled) { background: var(--primary-hover); }
   border-radius: 12px;
   cursor: pointer;
 }
-.canvas-switch::before {
+.toggle-switch::before {
   position: absolute;
   top: 2px;
   left: 2px;
@@ -482,8 +496,9 @@ button.primary:hover:not(:disabled) { background: var(--primary-hover); }
   background: var(--muted);
   content: "";
 }
-.canvas-control .canvas-switch:checked { background: var(--primary); border-color: transparent; }
-.canvas-switch:checked::before { transform: translateX(14px); background: var(--primary-text); }
+input.toggle-switch:checked { background: var(--primary); border-color: transparent; }
+.toggle-switch:checked::before { transform: translateX(14px); background: var(--primary-text); }
+input.toggle-switch:disabled { opacity: .55; cursor: default; }
 
 .load-report {
   position: fixed;
@@ -516,10 +531,11 @@ button.primary:hover:not(:disabled) { background: var(--primary-hover); }
   }
 }
 
-@media (max-width: 1170px) {
+@media (max-width: 1240px) {
   .tool-row { flex-wrap: wrap; }
   #toolbar-animation { flex: 1 0 100%; order: 1; }
   #toolbar-animation .animation-motion { flex: 1.25; }
+  #toolbar-animation .animation-expression { flex: 1.35; }
   #toolbar-animation .animation-field { flex: 1; }
   #toolbar-animation .animation-field select { flex: 1; width: 0; max-width: 225px; }
 }
@@ -541,13 +557,22 @@ button.primary:hover:not(:disabled) { background: var(--primary-hover); }
     border-radius: 16px;
   }
   body:has(.transform-window:not([hidden])) .inspector {
-    height: min(36dvh, max(135px, calc(100dvh - var(--toolbar-height) - var(--transform-reserve) - 8px)));
+    height: min(var(--inspector-stack-height, 36dvh), max(135px, calc(100dvh - var(--toolbar-height) - var(--transform-reserve) - 8px)));
   }
   body:has(.transform-window:not([hidden])) .inspector:not([data-moved]) {
     top: auto;
     bottom: var(--transform-reserve);
   }
   .transform-window { right: 8px; bottom: 8px; border-radius: 16px; }
+}
+
+@media (max-width: 440px) {
+  #toolbar-animation { flex-wrap: wrap; gap: 5px 12px; }
+  #toolbar-animation .animation-motion,
+  #toolbar-animation .animation-expression,
+  #inspector-animation .animation-motion,
+  #inspector-animation .animation-expression { flex: 1 1 100%; }
+  .inspector { --inspector-stack-height: 41dvh; }
 }
 
 @media (max-width: 360px) {
