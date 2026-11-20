@@ -118,16 +118,6 @@ export class ViewerModel {
     this.#previewEntry = new live2d.CubismMotionQueueEntry();
 
     const internal = display.internalModel;
-    // Cubism drives sway and breathing through the same controller.
-    const automaticParameters = [
-      // internal.idParamAngleX,
-      // internal.idParamAngleY,
-      // internal.idParamAngleZ,
-      // internal.idParamBodyAngleX,
-      internal.idParamBreath,
-    ];
-    internal.breath.setParameters(internal.breath.getParameters()
-      .filter(({ parameterId }) => automaticParameters.includes(parameterId)));
     this.#core = internal.coreModel;
     const parameters = this.#core.getModel().parameters;
     this.parameters = Array.from(parameters.ids, (id, index) => ({
