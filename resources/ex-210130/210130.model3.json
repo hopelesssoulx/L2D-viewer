@@ -1,0 +1,193 @@
+{
+  "Version": 3,
+  "Name": "210130",
+  "FileReferences": {
+    "Moc": "210130.moc3",
+    "Textures": [
+      "textures/texture_00.png",
+      "textures/texture_01.png"
+    ],
+    "Physics": "210130.physics3.json",
+    "Pose": "210130.pose3.json",
+    "DisplayInfo": null,
+    "Motions": {
+      "motion_000": [
+        {
+          "File": "motions/motion_000.motion3.json"
+        }
+      ],
+      "motion_001": [
+        {
+          "File": "motions/motion_001.motion3.json"
+        }
+      ],
+      "motion_002": [
+        {
+          "File": "motions/motion_002.motion3.json"
+        }
+      ],
+      "motion_003": [
+        {
+          "File": "motions/motion_003.motion3.json"
+        }
+      ],
+      "motion_010": [
+        {
+          "File": "motions/motion_010.motion3.json"
+        }
+      ],
+      "motion_011": [
+        {
+          "File": "motions/motion_011.motion3.json"
+        }
+      ],
+      "motion_020": [
+        {
+          "File": "motions/motion_020.motion3.json"
+        }
+      ],
+      "motion_030": [
+        {
+          "File": "motions/motion_030.motion3.json"
+        }
+      ],
+      "motion_040": [
+        {
+          "File": "motions/motion_040.motion3.json"
+        }
+      ],
+      "motion_041": [
+        {
+          "File": "motions/motion_041.motion3.json"
+        }
+      ],
+      "motion_051": [
+        {
+          "File": "motions/motion_051.motion3.json"
+        }
+      ],
+      "motion_052": [
+        {
+          "File": "motions/motion_052.motion3.json"
+        }
+      ],
+      "motion_100": [
+        {
+          "File": "motions/motion_100.motion3.json"
+        }
+      ],
+      "motion_101": [
+        {
+          "File": "motions/motion_101.motion3.json"
+        }
+      ],
+      "motion_200": [
+        {
+          "File": "motions/motion_200.motion3.json"
+        }
+      ],
+      "motion_201": [
+        {
+          "File": "motions/motion_201.motion3.json"
+        }
+      ],
+      "motion_300": [
+        {
+          "File": "motions/motion_300.motion3.json"
+        }
+      ],
+      "motion_400": [
+        {
+          "File": "motions/motion_400.motion3.json"
+        }
+      ],
+      "motion_401": [
+        {
+          "File": "motions/motion_401.motion3.json"
+        }
+      ],
+      "motion_500": [
+        {
+          "File": "motions/motion_500.motion3.json"
+        }
+      ],
+      "motion_501": [
+        {
+          "File": "motions/motion_501.motion3.json"
+        }
+      ],
+      "motion_502": [
+        {
+          "File": "motions/motion_502.motion3.json"
+        }
+      ]
+    },
+    "Expressions": [
+      {
+        "Name": "mtn_ex_051",
+        "File": "expressions/mtn_ex_051.exp3.json"
+      },
+      {
+        "Name": "mtn_ex_011",
+        "File": "expressions/mtn_ex_011.exp3.json"
+      },
+      {
+        "Name": "mtn_ex_064",
+        "File": "expressions/mtn_ex_064.exp3.json"
+      },
+      {
+        "Name": "mtn_ex_010",
+        "File": "expressions/mtn_ex_010.exp3.json"
+      },
+      {
+        "Name": "mtn_ex_001",
+        "File": "expressions/mtn_ex_001.exp3.json"
+      },
+      {
+        "Name": "mtn_ex_031",
+        "File": "expressions/mtn_ex_031.exp3.json"
+      },
+      {
+        "Name": "mtn_ex_060",
+        "File": "expressions/mtn_ex_060.exp3.json"
+      },
+      {
+        "Name": "mtn_ex_063",
+        "File": "expressions/mtn_ex_063.exp3.json"
+      },
+      {
+        "Name": "mtn_ex_040",
+        "File": "expressions/mtn_ex_040.exp3.json"
+      },
+      {
+        "Name": "mtn_ex_020",
+        "File": "expressions/mtn_ex_020.exp3.json"
+      },
+      {
+        "Name": "mtn_ex_041",
+        "File": "expressions/mtn_ex_041.exp3.json"
+      },
+      {
+        "Name": "mtn_ex_030",
+        "File": "expressions/mtn_ex_030.exp3.json"
+      }
+    ]
+  },
+  "Groups": [
+    {
+      "Target": "Parameter",
+      "Name": "EyeBlink",
+      "Ids": [
+        "ParamEyeLOpen",
+        "ParamEyeROpen"
+      ]
+    },
+    {
+      "Target": "Parameter",
+      "Name": "LipSync",
+      "Ids": [
+        "ParamMouthOpenY"
+      ]
+    }
+  ]
+}

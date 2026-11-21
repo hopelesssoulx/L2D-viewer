@@ -1,0 +1,33 @@
+{
+  "Type": "Live2D Pose",
+  "Groups": [
+    [
+      {
+        "Id": "Part01ArmRB00",
+        "Link": []
+      },
+      {
+        "Id": "Part01ArmRA00",
+        "Link": []
+      },
+      {
+        "Id": "Part01ArmRC00",
+        "Link": []
+      }
+    ],
+    [
+      {
+        "Id": "Part01ArmLA00",
+        "Link": []
+      },
+      {
+        "Id": "Part01ArmLB00",
+        "Link": []
+      },
+      {
+        "Id": "Part01ArmLC00",
+        "Link": []
+      }
+    ]
+  ]
+}
