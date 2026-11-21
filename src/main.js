@@ -5,12 +5,14 @@ import { ModelStrip } from "./model-strip.js";
 import { setupMotionProgress } from "./motion-progress.js";
 import { ModelScene } from "./scene.js";
 import { ParameterPanel } from "./parameter-panel.js";
+import { readResourceCatalog, resourceModelName, ResourceModelSource } from "./resource-model-source.js";
 import { setupTransformControls } from "./transform-controls.js";
 import { setupBackground, setupFloatingPanel, setupTheme, setupToolbar } from "./workspace-controls.js";
 
 const $ = (id) => document.getElementById(id);
 
 const add = $("add-models");
+const resourceModels = $("resource-models");
 const folder = $("folder-input");
 const toolbar = $("toolbar");
 const stage = $("stage");
@@ -127,6 +129,7 @@ function syncPlayback() {
   refreshMotionProgress();
   const busy = model?.loadingMotion || model?.loadingExpression;
   add.disabled = loadingModels;
+  resourceModels.disabled = loadingModels || resourceModels.options.length < 2;
   copy.disabled = loadingModels || !model || busy;
   remove.disabled = loadingModels || !model || busy;
   for (const button of playbackButtons) {
@@ -184,14 +187,32 @@ function updateModelList() {
   strip.render(scene.models, scene.selected);
 }
 
-async function importFolder(files) {
+async function populateResourceModels() {
+  try {
+    const groups = await readResourceCatalog();
+    resourceModels.append(...groups.map(([label, paths]) => {
+      const group = document.createElement("optgroup");
+      group.label = label;
+      group.append(...paths.map((path) => new Option(resourceModelName(path), path)));
+      return group;
+    }));
+  } catch {
+    const placeholder = resourceModels.options[0];
+    placeholder.dataset.i18n = "resourceListUnavailable";
+    placeholder.textContent = t("resourceListUnavailable");
+  }
+  syncPlayback();
+}
+
+async function importModels(getSources, readingStatus) {
+  if (loadingModels) return;
   loadingModels = true;
   syncPlayback();
-  reportLoad("loadingModels", { progress: { max: 1 } });
+  if (readingStatus) reportLoad(readingStatus, { progress: { max: 1 } });
   const errors = [];
   let latest;
   try {
-    const sources = discoverLocalModels(files);
+    const sources = getSources();
     for (const [index, source] of sources.entries()) {
       reportLoad("loadingModel", {
         args: { name: source.name, current: index + 1, total: sources.length },
@@ -297,8 +318,14 @@ if (scene) {
   folder.addEventListener("change", () => {
     const files = Array.from(folder.files);
     folder.value = "";
-    if (files.length && !loadingModels) void importFolder(files);
+    if (files.length) void importModels(() => discoverLocalModels(files), "loadingModels");
   });
+  resourceModels.addEventListener("change", () => {
+    const path = resourceModels.value;
+    resourceModels.value = "";
+    if (path) void importModels(() => [new ResourceModelSource(path)]);
+  });
+  void populateResourceModels();
   for (const button of playbackButtons) {
     button.addEventListener("click", () => {
       scene.selected.paused = !scene.selected.paused;

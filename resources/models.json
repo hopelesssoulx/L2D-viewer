@@ -1,0 +1,35 @@
+{
+  "bg-gbp": [
+    "bg-gbp/029_live_default/model.json",
+    "bg-gbp/029_live_event_111_sr/model.json",
+    "bg-gbp/029_live_event_159_ssr/model.json",
+    "bg-gbp/029_live_event_242_ur/model.json",
+    "bg-gbp/029_live_event_325_ur/model.json",
+    "bg-gbp/029_live_r_2023/model.json",
+    "bg-gbp/034_school_winter/model.json",
+    "bg-gbp/034_school_winter-2023/model.json",
+    "bg-gbp/039_casual-2023/model.json"
+  ],
+  "bg-on": [
+    "bg-on/adv_live2d_hotaru_016_casual_spring_01/adv_live2d_hotaru_016_casual_spring_01.model3.json",
+    "bg-on/adv_live2d_hotaru_016_child_casual_spring_01_still/adv_live2d_hotaru_016_child_casual_spring_01_still.model3.json",
+    "bg-on/adv_live2d_hotaru_016_live_01/adv_live2d_hotaru_016_live_01.model3.json",
+    "bg-on/adv_live2d_sub_viola_casual_spring_01/adv_live2d_sub_viola_casual_spring_01.model3.json",
+    "bg-on/adv_live2d_sub_viola_school_winter_hs/adv_live2d_sub_viola_school_winter_hs.model3.json"
+  ],
+  "ex": [
+    "ex-100930/100930.model3.json",
+    "ex-100931/100931.model3.json",
+    "ex-200936/200936.model3.json",
+    "ex-210130/210130.model3.json",
+    "ex-300230/300230.model3.json",
+    "ex-301130/301130.model3.json",
+    "ex-303030/303030.model3.json",
+    "ex-303031/303031.model3.json"
+  ],
+  "re": [
+    "re-104400/model.model3.json",
+    "re-105100/model.model3.json",
+    "re-303800/model.model3.json"
+  ]
+}

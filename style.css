@@ -184,6 +184,7 @@ button.primary:hover:not(:disabled) { background: var(--primary-hover); }
 }
 .tool-row button[data-open="true"] { background: var(--accent-wash); color: var(--accent); }
 .tool-row .add-models { width: 36px; flex: none; padding: 0; font-size: 1.4rem; line-height: 1; }
+.resource-models { width: 110px; min-height: 34px; padding: 4px 7px; font-size: .86rem; }
 .tool-separator { flex: none; width: 1px; height: 19px; margin-inline: 3px; background: var(--line); }
 .tool-spacer { flex: 1 1 auto; }
 .model-summary {
@@ -564,6 +565,7 @@ input.toggle-switch:disabled { opacity: .55; cursor: default; }
   .tool-row { gap: 2px; min-height: 49px; }
   .tool-row button { font-size: .82rem; min-height: 31px; padding: 4px clamp(3px, 1.3vw, 7px); }
   .tool-row .add-models { width: 29px; }
+  .resource-models { width: 90px; min-height: 31px; padding-inline: 4px; font-size: .82rem; }
   .tool-row .tool-separator { margin-inline: 1px; }
   .view-actions { min-width: 0; flex-wrap: wrap; }
   .language-select { min-height: 27px; margin-inline: 1px 0; padding-inline: 2px; }

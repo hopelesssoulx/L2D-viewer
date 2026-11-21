@@ -3,6 +3,8 @@ const messages = {
   importModels: ["导入 Live2D 模型", "Import Live2D models"],
   importHint: ["选择包含 Live2D 模型的文件夹，可以一次添加多个模型。", "Choose a Live2D model folder to import one or more models."],
   importFolder: ["导入文件夹", "Import folder"],
+  resourceModels: ["仓库模型", "Resources"],
+  resourceListUnavailable: ["列表不可用", "Unavailable"],
   toolbar: ["功能栏", "Toolbar"],
   showToolbar: ["展开功能栏", "Show toolbar"],
   pin: ["固定", "Pin"],
