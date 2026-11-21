@@ -50,7 +50,7 @@ const expressionFadeMs = 250;
 const manualIdleGroup = Symbol("No automatic idle motion");
 
 export class ViewerModel {
-  static async load(pixi, source) {
+  static async load(pixi, source, onProgress) {
     const live2d = pixi.live2d;
     const options = { autoUpdate: false, autoInteract: false, motionPreload: "NONE", idleMotionGroup: manualIdleGroup };
     const display = new live2d.Live2DModel(options);
@@ -61,6 +61,8 @@ export class ViewerModel {
       const descriptions = readParameterDescriptions(source, modelJSON.FileReferences.DisplayInfo);
       const groups = readParameterGroups(settings);
       textureURLs = settings.textures.map((reference) => settings.resolveURL(reference));
+      // Model loading has three milestones: settings, textures, and scene attachment.
+      onProgress?.(1 / 3);
 
       // Complete texture requests before the adapter starts decoding the moc.
       const textures = await Promise.allSettled(textureURLs.map((url) => pixi.Texture.fromURL(url)));
@@ -68,6 +70,7 @@ export class ViewerModel {
       if (failedTexture !== -1) {
         throw new ViewerError("unreadableTexture", { path: settings.textures[failedTexture] });
       }
+      onProgress?.(2 / 3);
 
       const failedOptionals = [];
       display.on("poseLoadError", () => failedOptionals.push(settings.pose));
@@ -231,7 +234,7 @@ export class ViewerModel {
     values.set(this.#blendedValues);
   }
 
-  async clone(pixi) {
+  async clone(pixi, onProgress) {
     const values = this.#values.slice();
     const baseValues = this.#baseValues.slice();
     const originalCore = this.#core.getModel();
@@ -239,7 +242,7 @@ export class ViewerModel {
     const opacities = originalCore.parts.opacities.slice();
     const { motionChoice, loopMotion, expressionChoice } = this;
     const progress = this.motionProgress;
-    const copy = await ViewerModel.load(pixi, this.source.clone());
+    const copy = await ViewerModel.load(pixi, this.source.clone(), onProgress);
     try {
       copy.motionChoice = motionChoice;
       copy.loopMotion = loopMotion;

@@ -15,6 +15,7 @@ const folder = $("folder-input");
 const toolbar = $("toolbar");
 const stage = $("stage");
 const report = $("load-report");
+const loadProgress = $("load-progress");
 const dismissReport = $("dismiss-report");
 const animationWindow = $("animation-window");
 const toggleAnimation = $("toggle-animation");
@@ -63,10 +64,16 @@ const refreshTransform = setupTransformControls(
   transformWindow, () => scene?.placement, (changes) => scene.setPlacement(changes)
 );
 
-function reportLoad(key, errors = []) {
+function reportLoad(key, { errors = [], args, progress } = {}) {
   report.hidden = !key;
+  loadProgress.hidden = !progress;
+  if (progress) {
+    loadProgress.max = progress.max;
+    if (progress.value === undefined) loadProgress.removeAttribute("value");
+    else loadProgress.value = progress.value;
+  }
   renderLoadReport = () => {
-    $("load-message").textContent = key ? t(key) : "";
+    $("load-message").textContent = key ? t(key, args) : "";
     dismissReport.hidden = !errors.length;
     const list = $("load-errors");
     list.hidden = !errors.length;
@@ -180,14 +187,18 @@ function updateModelList() {
 async function importFolder(files) {
   loadingModels = true;
   syncPlayback();
-  reportLoad("loadingModels");
+  reportLoad("loadingModels", { progress: { max: 1 } });
   const errors = [];
   let latest;
   try {
     const sources = discoverLocalModels(files);
-    for (const source of sources) {
+    for (const [index, source] of sources.entries()) {
+      reportLoad("loadingModel", {
+        args: { name: source.name, current: index + 1, total: sources.length },
+        progress: { value: index, max: sources.length },
+      });
       try {
-        latest = await scene.add(source);
+        latest = await scene.add(source, (fraction) => { loadProgress.value = index + fraction; });
         updateModelList();
       } catch (error) {
         errors.push({ path: source.path, error });
@@ -199,7 +210,7 @@ async function importFolder(files) {
     loadingModels = false;
     if (latest) selectModel(latest, true);
     else syncPlayback();
-    reportLoad(errors.length ? "importFailures" : "", errors);
+    reportLoad(errors.length ? "importFailures" : "", { errors });
   }
 }
 
@@ -207,14 +218,14 @@ async function copySelected() {
   const original = scene.selected;
   loadingModels = true;
   syncPlayback();
-  reportLoad("copyingModel");
+  reportLoad("copyingModel", { progress: { value: 0, max: 1 } });
   try {
-    const model = await scene.copy(original);
+    const model = await scene.copy(original, (fraction) => { loadProgress.value = fraction; });
     updateModelList();
     selectModel(model, true);
     reportLoad("");
   } catch (error) {
-    reportLoad("copyFailure", [{ model: original, error }]);
+    reportLoad("copyFailure", { errors: [{ model: original, error }] });
   } finally {
     loadingModels = false;
     syncPlayback();
@@ -275,7 +286,7 @@ try {
   });
 } catch (error) {
   add.disabled = true;
-  reportLoad("startFailure", [{ error }]);
+  reportLoad("startFailure", { errors: [{ error }] });
 }
 
 if (scene) {

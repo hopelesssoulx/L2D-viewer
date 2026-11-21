@@ -132,15 +132,15 @@ export class ModelScene {
     return null;
   }
 
-  async add(source) {
-    const model = await ViewerModel.load(this.pixi, source);
+  async add(source, onProgress) {
+    const model = await ViewerModel.load(this.pixi, source, onProgress);
     model.display.internalModel.coreModel.update();
     return this.#attach(model, { bounds: measureModel(model.display), x: 0, y: 0, angle: 0, size: 100 });
   }
 
-  async copy(model) {
+  async copy(model, onProgress) {
     const placement = { ...this.#placements.get(model) };
-    const copy = await model.clone(this.pixi);
+    const copy = await model.clone(this.pixi, onProgress);
     copy.copyNumber = 1;
     while (this.models.some((existing) =>
       existing.source.name === model.source.name && existing.copyNumber === copy.copyNumber

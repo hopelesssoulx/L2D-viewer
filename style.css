@@ -523,6 +523,18 @@ input.toggle-switch:disabled { opacity: .55; cursor: default; }
   overflow: auto;
   overscroll-behavior: contain;
 }
+.load-report:has(#load-progress:not([hidden])) {
+  width: 280px;
+  z-index: 13;
+}
+#load-message { overflow-wrap: anywhere; }
+#load-progress {
+  display: block;
+  width: 100%;
+  height: 8px;
+  margin-top: 8px;
+  accent-color: var(--primary);
+}
 .load-report ul { margin: 5px 0 0; padding-left: 20px; color: var(--danger); overflow-wrap: anywhere; }
 
 @media (min-width: 841px) {
