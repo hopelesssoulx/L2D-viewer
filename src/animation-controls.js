@@ -33,9 +33,7 @@ export class AnimationControls {
     const model = this.#getModel();
     for (const { motion, expression } of this.#pickers) {
       const motions = model?.motions.map(({ label }, index) => new Option(label, index)) ?? [];
-      const idle = new Option(motions.length ? "—" : t("noMotion"), -1);
-      idle.disabled = idle.hidden = motions.length > 0;
-      motion.replaceChildren(idle, ...motions);
+      motion.replaceChildren(new Option(t("noMotion"), -1), ...motions);
       expression.replaceChildren(new Option(t("noExpression"), -1),
         ...(model?.expressions.map((label, index) => new Option(label, index)) ?? []));
     }
@@ -48,7 +46,7 @@ export class AnimationControls {
       motion.disabled = !model?.motions.length || model.loadingMotion;
       play.disabled = motion.disabled || model.motionChoice < 0;
       loop.disabled = play.disabled;
-      loop.checked = model?.loopMotion ?? true;
+      loop.checked = model?.loopMotion ?? false;
       loopStatus.textContent = t(loop.checked ? "loopOn" : "loopOff");
       expression.disabled = !model?.expressions.length || model.loadingExpression;
       motion.value = model?.motionChoice ?? -1;

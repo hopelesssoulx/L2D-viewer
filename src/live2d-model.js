@@ -92,6 +92,7 @@ export class ViewerModel {
   #values;
   #baseValues;
   #animationValues;
+  #initialPartOpacities;
   #motionPriority;
   #activeMotion;
   #activeMotionIndex = -1;
@@ -109,7 +110,7 @@ export class ViewerModel {
     this.paused = false;
     this.loadingMotion = false;
     this.motionChoice = -1;
-    this.loopMotion = true;
+    this.loopMotion = false;
     this.motionError = null;
     this.loadingExpression = false;
     this.expressionChoice = -1;
@@ -119,7 +120,8 @@ export class ViewerModel {
 
     const internal = display.internalModel;
     this.#core = internal.coreModel;
-    const parameters = this.#core.getModel().parameters;
+    const { parameters, parts } = this.#core.getModel();
+    this.#initialPartOpacities = parts.opacities.slice();
     this.parameters = Array.from(parameters.ids, (id, index) => ({
       id,
       index,
@@ -336,12 +338,14 @@ export class ViewerModel {
   }
 
   async playMotion(index = this.motionChoice) {
-    const motion = this.motions[index];
-    if (!motion || this.loadingMotion) return;
-    this.loadingMotion = true;
-    if (this.motionChoice !== index && (this.motionChoice <= 0 || index === 0)) {
-      this.loopMotion = index === 0;
+    if (this.loadingMotion) return;
+    if (index === -1) {
+      if (this.motionChoice !== -1) this.#clearMotion();
+      return;
     }
+    const motion = this.motions[index];
+    if (!motion) return;
+    this.loadingMotion = true;
     this.motionChoice = index;
     this.motionError = null;
     try {
@@ -361,6 +365,20 @@ export class ViewerModel {
     } finally {
       this.loadingMotion = false;
     }
+  }
+
+  #clearMotion() {
+    this.display.internalModel.motionManager.stopAllMotions();
+    this.motionChoice = this.#activeMotionIndex = -1;
+    this.#activeMotion = undefined;
+    this.motionError = null;
+
+    const { parameters, parts } = this.#core.getModel();
+    parameters.values.set(parameters.defaultValues);
+    parts.opacities.set(this.#initialPartOpacities);
+    this.#core.saveParameters();
+    this.#baseValues.set(parameters.values);
+    this.#applyPose(true);
   }
 
   #motionEntry() {

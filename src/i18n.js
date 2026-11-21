@@ -88,7 +88,7 @@ const messages = {
   loopOff: ["不循环", "Once"],
   motionProgress: ["动作进度", "Motion progress"],
   motionFrame: ["当前动作帧", "Current motion frame"],
-  noMotion: ["无动作", "No motions"],
+  noMotion: ["无动作", "No motion"],
   noExpression: ["无表情", "No expression"],
   loadingMotion: ["加载动作中", "Loading motion"],
   loadingExpression: ["加载表情中", "Loading expression"],
