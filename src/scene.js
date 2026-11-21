@@ -1,7 +1,13 @@
 import { setupCanvasControls } from "./canvas-controls.js";
+import { visibleCubism2Drawables } from "./cubism2.js";
 import { ViewerModel } from "./live2d-model.js";
 
-function* visibleDrawables(core) {
+function* visibleDrawables(model) {
+  const { coreModel: core } = model.display.internalModel;
+  if (model.cubism2) {
+    yield* visibleCubism2Drawables(core);
+    return;
+  }
   for (let index = 0; index < core.getDrawableCount(); index++) {
     if (core.getDrawableDynamicFlagIsVisible(index) && core.getDrawableOpacity(index) > 0.01) {
       yield index;
@@ -9,15 +15,15 @@ function* visibleDrawables(core) {
   }
 }
 
-function measureModel(display) {
-  const internal = display.internalModel;
-  const { coreModel, localTransform } = internal;
+function measureModel(model) {
+  const internal = model.display.internalModel;
+  const { localTransform } = internal;
   let left = Infinity;
   let top = Infinity;
   let right = -Infinity;
   let bottom = -Infinity;
   const bounds = {};
-  for (const index of visibleDrawables(coreModel)) {
+  for (const index of visibleDrawables(model)) {
     internal.getDrawableBounds(index, bounds);
     if (!Number.isFinite(bounds.x) || !Number.isFinite(bounds.y)) continue;
     left = Math.min(left, bounds.x);
@@ -37,16 +43,18 @@ function measureModel(display) {
   };
 }
 
-function hitsModel(display, point) {
+function hitsModel(model, point) {
+  const { display, cubism2 } = model;
   const internal = display.internalModel;
   const core = internal.coreModel;
   const local = display.toModelPosition(point);
-  const x = (local.x - internal.originalWidth / 2) / internal.pixelsPerUnit;
-  const y = (internal.originalHeight / 2 - local.y) / internal.pixelsPerUnit;
+  const x = cubism2 ? local.x : (local.x - internal.originalWidth / 2) / internal.pixelsPerUnit;
+  const y = cubism2 ? local.y : (internal.originalHeight / 2 - local.y) / internal.pixelsPerUnit;
+  const context = cubism2 ? core.getModelContext() : null;
 
-  for (const index of visibleDrawables(core)) {
-    const vertices = core.getDrawableVertices(index);
-    const triangles = core.getDrawableVertexIndices(index);
+  for (const index of visibleDrawables(model)) {
+    const vertices = cubism2 ? core.getTransformedPoints(index) : core.getDrawableVertices(index);
+    const triangles = cubism2 ? context.getDrawData(index).getIndexArray() : core.getDrawableVertexIndices(index);
     for (let i = 0; i < triangles.length; i += 3) {
       const a = 2 * triangles[i];
       const b = 2 * triangles[i + 1];
@@ -127,15 +135,15 @@ export class ModelScene {
     );
     for (let i = this.models.length - 1; i >= 0; i--) {
       const model = this.models[i];
-      if (hitsModel(model.display, point)) return model;
+      if (hitsModel(model, point)) return model;
     }
     return null;
   }
 
   async add(source, onProgress) {
     const model = await ViewerModel.load(this.pixi, source, onProgress);
-    model.display.internalModel.coreModel.update();
-    return this.#attach(model, { bounds: measureModel(model.display), x: 0, y: 0, angle: 0, size: 100 });
+    model.updatePoseGeometry();
+    return this.#attach(model, { bounds: measureModel(model), x: 0, y: 0, angle: 0, size: 100 });
   }
 
   async copy(model, onProgress) {

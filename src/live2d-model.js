@@ -1,24 +1,42 @@
+import {
+  createCubism2Pose, cubism2MotionEntry, sampleCubism2Motion, setupCubism2Expressions, setupCubism2Motions,
+} from "./cubism2.js";
 import { t, ViewerError } from "./i18n.js";
 import { readParameterDescriptions } from "./parameter-descriptions.js";
 import { readParameterGroups } from "./parameter-groups.js";
 
 function prepareSettings(json, source, live2d) {
-  if (!live2d.Cubism4ModelSettings.isValidJSON(json)) {
+  const runtime = live2d.Live2DFactory.findRuntime(json);
+  if (!runtime) {
     throw new ViewerError("invalidModelSettings");
   }
 
   // Motion sound paths are optional and this viewer only loads visual assets.
-  for (const group of Object.values(json.FileReferences.Motions ?? {})) {
-    for (const motion of group) delete motion.Sound;
+  for (const group of Object.values(json.FileReferences?.Motions ?? json.motions ?? {})) {
+    for (const motion of group) {
+      delete motion.Sound;
+      delete motion.sound;
+    }
   }
 
-  const settings = new live2d.Cubism4ModelSettings({ ...json, url: source.path });
+  const settings = runtime.createModelSettings({ ...json, url: source.path });
   const urls = new Map();
   for (const reference of settings.getDefinedFiles()) {
     if (!urls.has(reference)) urls.set(reference, source.fileURL(reference));
   }
   settings.resolveURL = (reference) => urls.get(reference);
   return settings;
+}
+
+function createCubism4Pose(core) {
+  const { parameters, parts } = core.getModel();
+  return {
+    parameters,
+    readParts: () => parts.opacities.slice(),
+    writeParts: (values) => parts.opacities.set(values),
+    save: () => core.saveParameters(),
+    update: () => core.update(),
+  };
 }
 
 function readSnapshot(text, parameters) {
@@ -45,7 +63,7 @@ function readSnapshot(text, parameters) {
   });
 }
 
-const expressionBlends = ["Add", "Multiply", "Overwrite"];
+const expressionBlends = ["Add", "Add", "Overwrite"];
 const expressionFadeMs = 250;
 const manualIdleGroup = Symbol("No automatic idle motion");
 
@@ -58,8 +76,9 @@ export class ViewerModel {
     try {
       const modelJSON = await source.readSettings();
       const settings = prepareSettings(modelJSON, source, live2d);
-      const descriptions = readParameterDescriptions(source, modelJSON.FileReferences.DisplayInfo);
-      const groups = readParameterGroups(settings);
+      const cubism2 = settings instanceof live2d.Cubism2ModelSettings;
+      const descriptions = readParameterDescriptions(source, modelJSON.FileReferences?.DisplayInfo);
+      const groups = readParameterGroups(settings, cubism2);
       textureURLs = settings.textures.map((reference) => settings.resolveURL(reference));
       // Model loading has three milestones: settings, textures, and scene attachment.
       onProgress?.(1 / 3);
@@ -77,7 +96,7 @@ export class ViewerModel {
       display.on("physicsLoadError", () => failedOptionals.push(settings.physics));
       await live2d.Live2DFactory.setupLive2DModel(display, settings, options);
       if (failedOptionals.length) throw new ViewerError("unreadableModelFiles", { paths: failedOptionals.join(", ") });
-      return new ViewerModel(display, source, live2d, await descriptions, await groups);
+      return new ViewerModel(display, source, live2d, cubism2, await descriptions, await groups);
     } catch (error) {
       try {
         if (display.internalModel) display.destroy();
@@ -92,6 +111,7 @@ export class ViewerModel {
   }
 
   #core;
+  #pose;
   #values;
   #baseValues;
   #animationValues;
@@ -106,9 +126,10 @@ export class ViewerModel {
   #expressionLayers = new Map();
   #blendedValues;
 
-  constructor(display, source, live2d, descriptions, groups) {
+  constructor(display, source, live2d, cubism2, descriptions, groups) {
     this.display = display;
     this.source = source;
+    this.cubism2 = cubism2;
     this.copyNumber = 0;
     this.paused = false;
     this.loadingMotion = false;
@@ -119,12 +140,17 @@ export class ViewerModel {
     this.expressionChoice = -1;
     this.expressionError = null;
     this.#motionPriority = live2d.MotionPriority.FORCE;
-    this.#previewEntry = new live2d.CubismMotionQueueEntry();
 
     const internal = display.internalModel;
     this.#core = internal.coreModel;
-    const { parameters, parts } = this.#core.getModel();
-    this.#initialPartOpacities = parts.opacities.slice();
+    if (cubism2) {
+      this.#pose = createCubism2Pose(internal);
+      setupCubism2Motions(internal.motionManager);
+    } else {
+      this.#pose = createCubism4Pose(this.#core);
+    }
+    const { parameters } = this.#pose;
+    this.#initialPartOpacities = this.#pose.readParts();
     this.parameters = Array.from(parameters.ids, (id, index) => ({
       id,
       index,
@@ -140,19 +166,21 @@ export class ViewerModel {
     this.#animationValues = new Float32Array(parameters.count);
     this.#blendedValues = new Float32Array(parameters.count);
     this.motions = Object.entries(internal.motionManager.definitions).flatMap(([group, motions]) =>
-      motions.map(({ File }, index) => {
-        const name = File.split(/[\\/]/).at(-1).replace(/\.motion3\.json$/i, "");
+      motions.map(({ File, file }, index) => {
+        const name = (File ?? file).split(/[\\/]/).at(-1).replace(/\.(?:motion3\.json|mtn)$/i, "");
         return { group, index, label: group && group !== name ? `${group} / ${name}` : name };
       })
     );
 
     this.#expressionManager = internal.motionManager.expressionManager;
-    this.expressions = (this.#expressionManager?.definitions ?? []).map(({ Name, File }) =>
-      (Name || File.split(/[\\/]/).at(-1)).replace(/\.exp3\.json$/i, "")
+    this.expressions = (this.#expressionManager?.definitions ?? []).map(({ Name, name, File, file }) =>
+      (Name || name || (File ?? file).split(/[\\/]/).at(-1)).replace(/\.exp(?:3(?:\.json)?|\.json)$/i, "")
     );
-    if (this.#expressionManager) {
+    if (this.#expressionManager && cubism2) {
+      setupCubism2Expressions(this.#expressionManager, parameters.ids);
+    } else if (this.#expressionManager) {
       const create = this.#expressionManager.createExpression.bind(this.#expressionManager);
-      // Some exporters emit Cubism's numeric blend enum.
+      // Exedra exports additive offsets as 1 and overwrites as 2.
       this.#expressionManager.createExpression = (data, definition) => create({
         ...data,
         Parameters: (data.Parameters ?? []).map((parameter) => ({
@@ -182,6 +210,10 @@ export class ViewerModel {
     const name = this.source.name;
     if (!this.copyNumber) return name;
     return t(this.copyNumber === 1 ? "modelCopy" : "numberedModelCopy", { name, number: this.copyNumber });
+  }
+
+  updatePoseGeometry() {
+    this.#pose.update();
   }
 
   advance(deltaMS) {
@@ -237,9 +269,8 @@ export class ViewerModel {
   async clone(pixi, onProgress) {
     const values = this.#values.slice();
     const baseValues = this.#baseValues.slice();
-    const originalCore = this.#core.getModel();
-    const animationValues = originalCore.parameters.values.slice();
-    const opacities = originalCore.parts.opacities.slice();
+    const animationValues = this.#pose.parameters.values.slice();
+    const opacities = this.#pose.readParts();
     const { motionChoice, loopMotion, expressionChoice } = this;
     const progress = this.motionProgress;
     const copy = await ViewerModel.load(pixi, this.source.clone(), onProgress);
@@ -256,10 +287,9 @@ export class ViewerModel {
       if (copy.expressionError) throw copy.expressionError;
       copy.#values.set(values);
       copy.#baseValues.set(baseValues);
-      const copyCore = copy.#core.getModel();
-      copyCore.parameters.values.set(animationValues);
-      copyCore.parts.opacities.set(opacities);
-      copy.#core.saveParameters();
+      copy.#pose.parameters.values.set(animationValues);
+      copy.#pose.writeParts(opacities);
+      copy.#pose.save();
       copy.#applyPose();
       return copy;
     } catch (error) {
@@ -306,7 +336,7 @@ export class ViewerModel {
 
   #applyPose(expressionChanged = false) {
     if (!expressionChanged && this.#expressionFade) this.#finishExpressionFade();
-    const values = this.#core.getModel().parameters.values;
+    const { values } = this.#pose.parameters;
     this.#animationValues.set(values);
     try {
       values.set(expressionChanged ? this.#baseValues : this.#values);
@@ -315,7 +345,7 @@ export class ViewerModel {
         this.#applyExpression(values);
         this.#values.set(values);
       }
-      this.#core.update();
+      this.#pose.update();
     } finally {
       // Keep the playback baseline and clock intact while editing a still frame.
       values.set(this.#animationValues);
@@ -360,6 +390,11 @@ export class ViewerModel {
       this.#configureLoop(clip);
       const started = await this.display.motion(motion.group, motion.index, this.#motionPriority);
       if (!started) throw new ViewerError("motionFailed");
+      if (!this.cubism2 && !this.#previewEntry) {
+        // The combined adapter keeps its Cubism 4 queue entry class private.
+        const Entry = this.#motionEntry().constructor;
+        this.#previewEntry = new Entry();
+      }
       this.#activeMotion = clip;
       this.#activeMotionIndex = index;
       this.paused = false;
@@ -376,16 +411,17 @@ export class ViewerModel {
     this.#activeMotion = undefined;
     this.motionError = null;
 
-    const { parameters, parts } = this.#core.getModel();
+    const { parameters } = this.#pose;
     parameters.values.set(parameters.defaultValues);
-    parts.opacities.set(this.#initialPartOpacities);
-    this.#core.saveParameters();
+    this.#pose.writeParts(this.#initialPartOpacities);
+    this.#pose.save();
     this.#baseValues.set(parameters.values);
     this.#applyPose(true);
   }
 
   #motionEntry() {
-    return this.display.internalModel.motionManager.queueManager._motions[0];
+    const manager = this.display.internalModel.motionManager;
+    return this.cubism2 ? cubism2MotionEntry(manager) : manager.queueManager._motions[0];
   }
 
   get motionProgress() {
@@ -420,14 +456,18 @@ export class ViewerModel {
     this.paused = true;
 
     this.#sampleMotion(this.#activeMotion, time);
-    this.#core.saveParameters();
-    this.#baseValues.set(this.#core.getModel().parameters.values);
+    this.#pose.save();
+    this.#baseValues.set(this.#pose.parameters.values);
     this.#applyPose(true);
     this.#positionMotion(entry, time);
   }
 
   #sampleMotion(clip, time) {
     // Preview the authored curves at full weight without advancing the playback queue.
+    if (this.cubism2) {
+      sampleCubism2Motion(clip, this.#core, time);
+      return;
+    }
     this.#previewEntry.setStartTime(-time);
     this.#previewEntry.setFadeInStartTime(-Infinity);
     const loop = clip.isLoop();
@@ -441,10 +481,10 @@ export class ViewerModel {
 
   #positionMotion(entry, time) {
     const now = this.display.elapsedTime / 1000;
-    entry.setIsStarted(true);
+    entry.setIsStarted?.(true);
     entry.setStartTime(now - time);
     entry.setFadeInStartTime(-Infinity);
-    entry.setLastCheckEventSeconds(now);
+    entry.setLastCheckEventSeconds?.(now);
     this.#configureLoop(this.#activeMotion, entry);
   }
 

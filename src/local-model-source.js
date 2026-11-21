@@ -1,5 +1,7 @@
 import { ViewerError } from "./i18n.js";
 
+const modelFile = /(?:\.model3|(?:^|\.)model)\.json$/i;
+
 function resolvePath(modelPath, reference) {
   if (typeof reference !== "string" || !reference || /^(?:[\\/]|[a-z][a-z\d+.-]*:)/i.test(reference)) {
     return null;
@@ -37,7 +39,7 @@ class LocalModelSource {
   constructor(file, filesByPath) {
     this.file = file;
     this.path = file.webkitRelativePath;
-    const name = file.name.replace(/\.model3\.json$/i, "");
+    const name = file.name.replace(/(?:\.model3?)?\.json$/i, "");
     this.name = name.toLowerCase() === "model" ? this.path.split("/").at(-2) : name;
     this.#filesByPath = filesByPath;
   }
@@ -56,7 +58,10 @@ class LocalModelSource {
 
   fileURL(reference) {
     const file = findFile(this.#filesByPath, this.path, reference);
-    if (!file) throw new ViewerError("missingModelAsset", { path: reference });
+    if (!file) {
+      const shared = /^\.\.[\\/]/.test(reference);
+      throw new ViewerError(shared ? "missingSharedModelAsset" : "missingModelAsset", { path: reference });
+    }
 
     if (!this.#urls.has(file)) this.#urls.set(file, URL.createObjectURL(file));
     return this.#urls.get(file);
@@ -70,20 +75,18 @@ class LocalModelSource {
 
 export function discoverLocalModels(files) {
   const filesByPath = new Map();
-  let hasLegacyModel = false;
   for (const file of files) {
     if (!file.webkitRelativePath) continue;
     filesByPath.set(file.webkitRelativePath, file);
-    if (/\.model\.json$/i.test(file.name)) hasLegacyModel = true;
   }
 
   const models = [...filesByPath.values()]
-    .filter((file) => /\.model3\.json$/i.test(file.name))
+    .filter((file) => modelFile.test(file.name))
     .sort((a, b) => a.webkitRelativePath.localeCompare(b.webkitRelativePath))
     .map((file) => new LocalModelSource(file, filesByPath));
 
   if (!models.length) {
-    throw new ViewerError(hasLegacyModel ? "oldModelFormat" : "noModelJSON");
+    throw new ViewerError("noModelJSON");
   }
   return models;
 }
