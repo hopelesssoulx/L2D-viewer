@@ -16,6 +16,8 @@ const toolbar = $("toolbar");
 const stage = $("stage");
 const report = $("load-report");
 const dismissReport = $("dismiss-report");
+const animationWindow = $("animation-window");
+const toggleAnimation = $("toggle-animation");
 const inspectorWindow = $("inspector");
 const toggleInspector = $("toggle-inspector");
 const transformWindow = $("transform-window");
@@ -47,11 +49,11 @@ const panel = new ParameterPanel({
   onPlayback: syncPlayback,
 });
 const animation = new AnimationControls(
-  $("animation-template"), [$("toolbar-animation"), $("inspector-animation")],
+  animationWindow, $("motion-loop-template"), [...document.querySelectorAll("[data-loop-host]")],
   () => scene?.selected, syncPlayback
 );
 const refreshMotionProgress = setupMotionProgress(
-  $("inspector-animation"), $("motion-progress-template"), () => scene?.selected, syncPlayback
+  $("inspector-motion-progress"), () => scene?.selected, syncPlayback
 );
 const strip = new ModelStrip($("model-strip"), toggleSelection, (model, index) => {
   scene.reorder(model, index);
@@ -87,6 +89,12 @@ function setJSONStatus(message, error = false) {
   renderJSONStatus();
 }
 
+function setAnimation(open) {
+  animationWindow.hidden = !open;
+  toggleAnimation.setAttribute("aria-expanded", open);
+  if (open) revealAnimation();
+}
+
 function setInspector(open) {
   inspectorWindow.hidden = !open;
   toggleInspector.setAttribute("aria-expanded", open);
@@ -118,7 +126,7 @@ function syncPlayback() {
     button.disabled = !model || model.loadingMotion;
     button.textContent = t(model?.paused ? "resume" : "pause");
   }
-  toggleInspector.disabled = toggleTransform.disabled = !model;
+  toggleAnimation.disabled = toggleInspector.disabled = toggleTransform.disabled = !model;
   if (!model) {
     playbackState.textContent = "";
     return;
@@ -138,6 +146,7 @@ function updateSelection() {
   panel.select(model);
   animation.select();
   if (!model) {
+    setAnimation(false);
     setInspector(false);
     setTransform(false);
   } else {
@@ -147,11 +156,14 @@ function updateSelection() {
   syncPlayback();
 }
 
-function selectModel(model, openTransform = false) {
+function selectModel(model, openModelPanels = false) {
   const previous = scene.selected;
   scene.select(model);
   updateSelection();
-  if (model && (openTransform || !previous)) setTransform(true);
+  if (model && (openModelPanels || !previous)) {
+    setTransform(true);
+    setAnimation(true);
+  }
 }
 
 function toggleSelection(model) {
@@ -231,10 +243,11 @@ function setupPanelToggle(button, close, window, setOpen) {
 }
 
 const localizeToolbar = setupToolbar($("toolbar-dock"), toolbar, $("pin-toolbar"), $("reveal-toolbar"));
+const floatingPanels = [animationWindow, inspectorWindow, transformWindow];
 function bringForward(panel) {
-  inspectorWindow.toggleAttribute("data-front", panel === inspectorWindow);
-  transformWindow.toggleAttribute("data-front", panel === transformWindow);
+  for (const floatingPanel of floatingPanels) floatingPanel.toggleAttribute("data-front", panel === floatingPanel);
 }
+const revealAnimation = setupFloatingPanel(animationWindow, bringForward);
 const revealInspector = setupFloatingPanel(inspectorWindow, bringForward);
 const revealTransform = setupFloatingPanel(transformWindow, bringForward);
 const localizeTheme = setupTheme($("theme-toggle"));
@@ -244,6 +257,7 @@ new ResizeObserver(() => {
   }
 }).observe(transformWindow);
 const localizeBackground = setupBackground(stage, $("background-popover"), $("background-input"), $("upload-background"), $("background-status"));
+setupPanelToggle(toggleAnimation, $("close-animation"), animationWindow, setAnimation);
 setupPanelToggle(toggleInspector, $("close-inspector"), inspectorWindow, setInspector);
 setupPanelToggle(toggleTransform, $("close-transform"), transformWindow, setTransform);
 dismissReport.addEventListener("click", () => { report.hidden = true; });

@@ -1,9 +1,4 @@
-export function setupMotionProgress(host, template, getModel, onPlayback) {
-  const row = document.createElement("div");
-  row.className = "motion-progress";
-  row.append(host.querySelector(".animation-loop"), template.content.cloneNode(true));
-  host.querySelector(".animation-expression").before(row);
-
+export function setupMotionProgress(row, getModel, onPlayback) {
   const slider = row.querySelector("input[type=range]");
   const number = row.querySelector("input[type=number]");
   const total = row.querySelector("span[data-last-frame]");

@@ -32,7 +32,6 @@
     <div id="toolbar" class="toolbar glass">
       <nav class="tool-row" aria-label="功能栏" data-i18n-aria-label="toolbar">
         <button id="add-models" type="button" class="primary add-models" aria-label="导入文件夹" data-i18n-aria-label="importFolder" title="导入文件夹" data-i18n-title="importFolder">+</button>
-        <div id="toolbar-animation" class="animation-controls"></div>
         <div class="model-actions">
           <button id="toggle-playback" type="button" disabled data-i18n="pause" hidden>暂停</button>
           <button id="copy-model" type="button" aria-label="复制选中的模型" data-i18n-aria-label="copyModel" disabled data-i18n="copy">复制</button>
@@ -40,6 +39,7 @@
         </div>
         <div class="tool-spacer"></div>
         <div class="view-actions">
+          <button id="toggle-animation" type="button" aria-expanded="false" aria-controls="animation-window" aria-label="动作与表情" data-i18n-aria-label="animationPanel" disabled data-i18n="animation">动画</button>
           <button id="toggle-inspector" type="button" aria-expanded="false" aria-controls="inspector" disabled aria-label="参数检查器" data-i18n-aria-label="inspector"><span data-i18n="parametersShort">参数</span><span class="wide-label" data-i18n="inspectorSuffix">检查器</span></button>
           <button id="toggle-transform" type="button" aria-expanded="false" aria-controls="transform-window" disabled data-i18n="transform">变换</button>
           <button id="background-tools" type="button" popovertarget="background-popover" data-i18n="background" aria-label="画布背景" data-i18n-aria-label="canvasBackground">背景</button>
@@ -68,31 +68,11 @@
   <input id="folder-input" type="file" webkitdirectory multiple hidden>
   <input id="background-input" type="file" accept="image/*" hidden>
 
-  <template id="animation-template">
-    <div class="animation-motion">
-      <label class="animation-field">
-        <span data-i18n="motion">动作</span>
-        <select data-motion-select></select>
-      </label>
-      <button type="button" data-play-motion data-i18n="replay">（重）播放</button>
-    </div>
-    <div class="animation-expression">
-      <label class="animation-loop">
-        <input type="checkbox" class="toggle-switch" role="switch" data-motion-loop aria-label="动作循环" data-i18n-aria-label="motionLoop" autocomplete="off">
-        <span data-motion-loop-status></span>
-      </label>
-      <label class="animation-field">
-        <span data-i18n="expression">表情</span>
-        <select data-expression-select></select>
-      </label>
-    </div>
-    <p class="animation-error error" data-animation-error role="status" hidden></p>
-  </template>
-
-  <template id="motion-progress-template">
-    <input type="range" min="0" max="0" step="1" value="0" aria-label="动作进度" data-i18n-aria-label="motionProgress" disabled>
-    <input type="number" min="0" max="0" step="1" inputmode="numeric" value="0" aria-label="当前动作帧" data-i18n-aria-label="motionFrame" disabled>
-    <span data-last-frame class="muted"></span>
+  <template id="motion-loop-template">
+    <label class="animation-loop">
+      <input type="checkbox" class="toggle-switch" role="switch" data-motion-loop aria-label="动作循环" data-i18n-aria-label="motionLoop" autocomplete="off">
+      <span data-motion-loop-status></span>
+    </label>
   </template>
 
   <section id="background-popover" class="tool-popover glass" popover="auto" aria-labelledby="background-heading">
@@ -109,13 +89,40 @@
     <p id="background-status" class="inline-message muted" role="status" hidden></p>
   </section>
 
+  <aside id="animation-window" class="animation-window floating-panel glass" aria-labelledby="animation-heading" hidden>
+    <div class="inspector-bar">
+      <h2 id="animation-heading" data-i18n="animationPanel">动作与表情</h2>
+      <button id="close-animation" type="button" class="quiet close" aria-label="关闭动作与表情" data-i18n-aria-label="closeAnimation">×</button>
+    </div>
+    <div class="animation-content">
+      <div class="animation-lists">
+        <label class="animation-list">
+          <span data-i18n="motion">动作</span>
+          <select size="8" data-motion-select></select>
+        </label>
+        <label class="animation-list">
+          <span data-i18n="expression">表情</span>
+          <select size="8" data-expression-select></select>
+        </label>
+      </div>
+      <div class="animation-playback" data-loop-host>
+        <button type="button" data-play-motion data-i18n="replay">（重）播放</button>
+      </div>
+      <p class="animation-error error" data-animation-error role="status" hidden></p>
+    </div>
+  </aside>
+
   <aside id="inspector" class="inspector floating-panel glass" aria-labelledby="inspector-heading" hidden>
     <div id="inspector-bar" class="inspector-bar">
       <h2 id="inspector-heading" data-i18n="inspector">参数检查器</h2>
       <button id="close-inspector" type="button" class="quiet close" aria-label="关闭参数检查器" data-i18n-aria-label="closeInspector">×</button>
     </div>
     <div class="inspector-content">
-      <div id="inspector-animation" class="animation-controls"></div>
+      <div id="inspector-motion-progress" class="motion-progress" data-loop-host>
+        <input type="range" min="0" max="0" step="1" value="0" aria-label="动作进度" data-i18n-aria-label="motionProgress" disabled>
+        <input type="number" min="0" max="0" step="1" inputmode="numeric" value="0" aria-label="当前动作帧" data-i18n-aria-label="motionFrame" disabled>
+        <span data-last-frame class="muted"></span>
+      </div>
       <div class="panel-switch" aria-label="检查器面板" data-i18n-aria-label="inspectorPanels">
         <button id="show-parameters" type="button" aria-pressed="true" aria-controls="parameters-view" data-i18n="motionParameterTab" aria-label="动作参数" data-i18n-aria-label="motionParameters">动作参数</button>
         <button id="show-expression-parameters" type="button" aria-pressed="false" aria-controls="parameters-view" data-i18n="expressionParameterTab" aria-label="表情参数" data-i18n-aria-label="expressionParameters">表情参数</button>

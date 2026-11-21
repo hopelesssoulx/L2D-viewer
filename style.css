@@ -23,6 +23,7 @@
   --soft-shadow: 0 5px 24px #324d7820;
   --outer-pad: clamp(8px, 2.6vw, 38px);
   --toolbar-height: 97px;
+  --animation-width: min(316px, calc(100vw - 16px));
   --transform-width: min(282px, calc(100vw - 16px));
   --transform-reserve: calc(var(--transform-height, 212px) + 22px);
   font: 14px/1.45 system-ui, sans-serif;
@@ -185,42 +186,6 @@ button.primary:hover:not(:disabled) { background: var(--primary-hover); }
 .tool-row .add-models { width: 36px; flex: none; padding: 0; font-size: 1.4rem; line-height: 1; }
 .tool-separator { flex: none; width: 1px; height: 19px; margin-inline: 3px; background: var(--line); }
 .tool-spacer { flex: 1 1 auto; }
-.animation-controls { display: flex; align-items: center; gap: 10px; min-width: 0; }
-#toolbar-animation { padding-inline: 6px; gap: 12px; }
-.animation-motion, .animation-expression, .animation-field, .animation-loop {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  min-width: 0;
-}
-.animation-loop {
-  flex: none;
-  color: var(--muted);
-  font-size: .82rem;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.animation-loop span { min-width: 3em; }
-.animation-field { color: var(--muted); font-size: .82rem; white-space: nowrap; }
-.animation-field select {
-  min-height: 32px;
-  width: clamp(83px, 12vw, 176px);
-  padding: 4px 7px;
-  text-overflow: ellipsis;
-}
-.animation-motion button { font-size: .82rem; padding-inline: 7px; }
-.animation-error { font-size: .84rem; overflow-wrap: anywhere; }
-#toolbar-animation .animation-error {
-  position: absolute;
-  z-index: 1;
-  top: calc(var(--toolbar-height) + 5px);
-  left: 0;
-  padding: 7px 11px;
-  max-width: min(450px, 95vw);
-  background: var(--glass);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-}
 .model-summary {
   min-height: 43px;
   border-top: 1px solid var(--line);
@@ -373,6 +338,49 @@ button.primary:hover:not(:disabled) { background: var(--primary-hover); }
 }
 .floating-panel .inspector-bar { cursor: grab; touch-action: none; user-select: none; }
 .floating-panel .inspector-bar:active { cursor: grabbing; }
+.animation-window {
+  --animation-space: max(145px, calc(100dvh - var(--toolbar-height) - 22px));
+  top: calc(var(--toolbar-height) + 14px);
+  right: 16px;
+  width: var(--animation-width);
+  max-height: var(--animation-space);
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  overflow: hidden;
+}
+body:has(.transform-window:not([hidden], [data-moved])) .animation-window:not([data-moved]) {
+  --animation-space: max(145px, calc(100dvh - var(--toolbar-height) - var(--transform-reserve) - 22px));
+}
+.animation-content {
+  display: grid;
+  gap: 8px;
+  padding: 9px 12px 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.animation-lists { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.animation-list { display: grid; min-width: 0; gap: 4px; color: var(--muted); font-size: .86rem; }
+.animation-list select {
+  width: 100%;
+  height: clamp(48px, calc(var(--animation-space) - 134px), 202px);
+  padding: 4px;
+  overscroll-behavior: contain;
+}
+.animation-list option { padding: 3px 5px; border-radius: 5px; overflow: hidden; text-overflow: ellipsis; }
+.animation-list option:checked { background: var(--accent-wash) linear-gradient(var(--accent-wash), var(--accent-wash)); color: var(--accent); }
+.animation-playback { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.animation-loop {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  font-size: .82rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.animation-loop span { min-width: 3em; }
+.animation-error { font-size: .84rem; overflow-wrap: anywhere; }
 .inspector {
   top: calc(var(--toolbar-height) + 14px);
   right: 16px;
@@ -388,23 +396,13 @@ button.primary:hover:not(:disabled) { background: var(--primary-hover); }
 .inspector-bar h2 { font-size: 1rem; font-weight: 700; }
 .close { display: grid; place-content: center; width: 29px; min-height: 29px; padding: 0; font-size: 1.15rem; line-height: 1; }
 .inspector-content { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-#inspector-animation {
-  flex-wrap: wrap;
-  gap: 7px;
-  padding: 9px 12px;
-  border-bottom: 1px solid var(--line);
-}
-#inspector-animation .animation-motion,
-#inspector-animation .animation-expression { flex: 1 1 100%; }
-#inspector-animation .animation-field { flex-grow: 1; }
-#inspector-animation .animation-field select { flex: 1; width: 0; }
-#inspector-animation .animation-error { flex-basis: 100%; }
 .motion-progress {
   display: grid;
-  flex: 1 1 100%;
   grid-template-columns: auto minmax(45px, 1fr) 52px auto;
   align-items: center;
   gap: 6px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
   font-size: .82rem;
   font-variant-numeric: tabular-nums;
 }
@@ -531,6 +529,9 @@ input.toggle-switch:disabled { opacity: .55; cursor: default; }
   body:has(.transform-window:not([hidden])) .inspector:not([data-moved]) {
     right: calc(var(--transform-width) + 25px);
   }
+  body:has(.animation-window:not([hidden])) .inspector:not([data-moved]) {
+    right: calc(var(--animation-width) + 25px);
+  }
 }
 
 @media (min-width: 611px) and (max-width: 840px) {
@@ -545,11 +546,6 @@ input.toggle-switch:disabled { opacity: .55; cursor: default; }
 
 @media (max-width: 1240px) {
   .tool-row { flex-wrap: wrap; }
-  #toolbar-animation { flex: 1 0 100%; order: 1; }
-  #toolbar-animation .animation-motion { flex: 1.25; }
-  #toolbar-animation .animation-expression { flex: 1.35; }
-  #toolbar-animation .animation-field { flex: 1; }
-  #toolbar-animation .animation-field select { flex: 1; width: 0; max-width: 225px; }
 }
 
 @media (max-width: 610px) {
@@ -562,6 +558,7 @@ input.toggle-switch:disabled { opacity: .55; cursor: default; }
   .wide-label { display: none; }
   .model-summary { gap: 4px; min-height: 37px; font-size: .78rem; }
   .model-summary .tool-separator { margin-inline: 2px; }
+  .animation-window { top: calc(var(--toolbar-height) + 8px); right: 8px; border-radius: 16px; }
   .inspector {
     inset: auto 8px 8px;
     width: auto;
@@ -579,12 +576,9 @@ input.toggle-switch:disabled { opacity: .55; cursor: default; }
 }
 
 @media (max-width: 440px) {
-  #toolbar-animation { flex-wrap: wrap; gap: 5px 12px; }
-  #toolbar-animation .animation-motion,
-  #toolbar-animation .animation-expression { flex: 1 1 100%; }
   .inspector { --inspector-stack-height: 45dvh; }
   .inspector-content { overflow-y: auto; overscroll-behavior: contain; }
-  #inspector-animation, .panel-switch, .parameters-view, .parameter-list { flex: none; }
+  .motion-progress, .panel-switch, .parameters-view, .parameter-list { flex: none; }
   .parameter-list { overflow: visible; }
   .panel-switch { padding-block: 6px; }
   .panel-switch button { min-height: 29px; padding-inline: 7px; }
