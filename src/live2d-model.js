@@ -217,8 +217,9 @@ export class ViewerModel {
   }
 
   advance(deltaMS) {
+    if (this.paused) return;
     const fading = this.#advanceExpression(deltaMS);
-    if (!this.paused && !this.loadingMotion) this.display.update(deltaMS);
+    if (!this.loadingMotion) this.display.update(deltaMS);
     else if (fading) this.#applyPose(true);
   }
 
@@ -361,8 +362,12 @@ export class ViewerModel {
       if (index >= 0 && !expression) throw new ViewerError("expressionFailed");
       this.#expression = expression;
       this.expressionChoice = index;
-      if (immediate) this.#finishExpressionFade();
-      else this.#expressionFade = { layers: new Map(this.#expressionLayers), elapsed: 0 };
+      if (immediate || this.paused) {
+        this.#finishExpressionFade();
+        this.#applyPose(true);
+      } else {
+        this.#expressionFade = { layers: new Map(this.#expressionLayers), elapsed: 0 };
+      }
     } catch (error) {
       this.expressionError = error;
     } finally {
@@ -370,7 +375,7 @@ export class ViewerModel {
     }
   }
 
-  async playMotion(index = this.motionChoice) {
+  async playMotion(index = this.motionChoice, { resume = true } = {}) {
     if (this.loadingMotion) return;
     if (index === -1) {
       if (this.motionChoice !== -1) this.#clearMotion();
@@ -397,7 +402,8 @@ export class ViewerModel {
       }
       this.#activeMotion = clip;
       this.#activeMotionIndex = index;
-      this.paused = false;
+      if (resume) this.paused = false;
+      else if (this.paused) this.#previewMotionFrame(0);
     } catch (error) {
       this.motionError = error;
     } finally {
@@ -447,19 +453,22 @@ export class ViewerModel {
     if (!progress || !Number.isFinite(frame)) return;
     let entry = this.#motionEntry();
     if (!entry) {
-      await this.playMotion();
+      await this.playMotion(this.motionChoice, { resume: false });
       entry = this.#motionEntry();
       if (!entry || this.motionError) return;
     }
     const target = Math.min(progress.lastFrame, Math.max(0, Math.round(frame)));
     const time = target === progress.lastFrame ? progress.duration : Math.min(progress.duration, target / progress.fps);
     this.paused = true;
+    this.#previewMotionFrame(time);
+    this.#positionMotion(entry, time);
+  }
 
+  #previewMotionFrame(time) {
     this.#sampleMotion(this.#activeMotion, time);
     this.#pose.save();
     this.#baseValues.set(this.#pose.parameters.values);
     this.#applyPose(true);
-    this.#positionMotion(entry, time);
   }
 
   #sampleMotion(clip, time) {

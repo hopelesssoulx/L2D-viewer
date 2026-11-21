@@ -17,7 +17,7 @@ export class AnimationControls {
     this.#play = window.querySelector("[data-play-motion]");
     this.#error = window.querySelector("[data-animation-error]");
     this.#motion.addEventListener("change", () =>
-      this.#run((model) => model.playMotion(Number(this.#motion.value)))
+      this.#run((model) => model.playMotion(Number(this.#motion.value), { resume: false }))
     );
     this.#expression.addEventListener("change", () =>
       this.#run((model) => model.setExpression(Number(this.#expression.value)))
