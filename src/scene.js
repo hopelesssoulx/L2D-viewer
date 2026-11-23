@@ -141,6 +141,21 @@ export class ModelScene {
     return this.#placements.get(this.selected);
   }
 
+  captureFrame() {
+    const view = this.#app.view;
+    const frame = document.createElement("canvas");
+    frame.width = view.width;
+    frame.height = view.height;
+    this.#highlight.renderable = false;
+    try {
+      this.#app.render();
+      frame.getContext("2d").drawImage(view, 0, 0);
+    } finally {
+      this.#highlight.renderable = true;
+    }
+    return frame;
+  }
+
   #canvasPoint(clientX, clientY) {
     const { left, top, width, height } = this.#app.view.getBoundingClientRect();
     return new this.pixi.Point(

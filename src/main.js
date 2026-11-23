@@ -1,5 +1,6 @@
 import { AnimationControls } from "./animation-controls.js";
 import { setupBasicControls } from "./basic-controls.js";
+import { setupCanvasExport } from "./canvas-export.js";
 import { setupFolderDrop } from "./folder-drop.js";
 import { getLanguage, setLanguage, t, translatePage, ViewerError } from "./i18n.js";
 import { discoverLocalModels } from "./local-model-source.js";
@@ -21,6 +22,7 @@ const modelURL = $("model-url");
 const folder = $("folder-input");
 const toolbar = $("toolbar");
 const stage = $("stage");
+const exportImage = $("export-image");
 const report = $("load-report");
 const loadProgress = $("load-progress");
 const dismissReport = $("dismiss-report");
@@ -206,6 +208,7 @@ function updateModelList() {
   const count = scene.models.length;
   $("model-count").textContent = t(count === 1 ? "oneModel" : "modelCount", { count });
   $("stage-empty").hidden = count > 0;
+  exportImage.disabled = count === 0;
   strip.render(scene.models, scene.selected);
 }
 
@@ -315,7 +318,8 @@ new ResizeObserver(() => {
     document.documentElement.style.setProperty("--transform-height", `${transformWindow.offsetHeight}px`);
   }
 }).observe(transformWindow);
-const localizeBackground = setupBackground(stage, $("background-popover"), $("background-input"), $("upload-background"), $("background-status"));
+const background = setupBackground(stage, $("background-popover"), $("background-input"), $("upload-background"), $("background-status"));
+setupCanvasExport($("export-image-popover"), stage, () => scene.captureFrame(), () => background.image);
 setupPanelToggle(toggleBasic, $("close-basic"), basicWindow, setBasic);
 setupPanelToggle(toggleAnimation, $("close-animation"), animationWindow, setAnimation);
 setupPanelToggle(toggleInspector, $("close-inspector"), inspectorWindow, setInspector);
@@ -418,7 +422,7 @@ function localizeViewer() {
   translatePage();
   localizeToolbar();
   localizeTheme();
-  localizeBackground();
+  background.localize();
   animation.select();
   panel.localize();
   if (scene) {

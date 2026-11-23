@@ -139,6 +139,7 @@ export function setupBackground(stage, popup, input, upload, status) {
   const presets = [...popup.querySelectorAll("[data-background]")];
   const dots = popup.querySelector("#background-dots");
   let imageURL = null;
+  let backgroundImage = null;
   let choice = 0;
 
   const updateDots = () => stage.toggleAttribute("data-dots-hidden", !dots.checked);
@@ -151,9 +152,10 @@ export function setupBackground(stage, popup, input, upload, status) {
     status.hidden = !message;
   }
 
-  function setBackground(type, value, selectedPreset) {
+  function setBackground(type, value, selectedPreset, image = null) {
     if (imageURL) URL.revokeObjectURL(imageURL);
     imageURL = type === "image" ? value : null;
+    backgroundImage = image;
     if (type) stage.dataset.background = type;
     else delete stage.dataset.background;
     stage.style.setProperty("--custom-background", imageURL ? `url("${imageURL}")` : value);
@@ -189,10 +191,13 @@ export function setupBackground(stage, popup, input, upload, status) {
       URL.revokeObjectURL(url);
       return;
     }
-    setBackground("image", url);
+    setBackground("image", url, null, image);
     setStatus(file.name);
   });
-  return () => {
-    if (status.classList.contains("error")) status.textContent = t("invalidImage");
+  return {
+    get image() { return backgroundImage; },
+    localize() {
+      if (status.classList.contains("error")) status.textContent = t("invalidImage");
+    },
   };
 }
