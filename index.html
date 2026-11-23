@@ -50,6 +50,7 @@
         </div>
         <div class="tool-spacer"></div>
         <div class="view-actions">
+          <button id="toggle-basic" type="button" aria-expanded="false" aria-controls="basic-window" disabled data-i18n="basic">基础</button>
           <button id="toggle-animation" type="button" aria-expanded="false" aria-controls="animation-window" disabled data-i18n="animationPanel">动作和表情</button>
           <button id="toggle-inspector" type="button" aria-expanded="false" aria-controls="inspector" disabled data-i18n="inspector">参数</button>
           <button id="toggle-transform" type="button" aria-expanded="false" aria-controls="transform-window" disabled data-i18n="transform">变换</button>
@@ -104,6 +105,60 @@
     <button id="upload-background" type="button" class="background-upload" data-i18n="uploadImage">上传图片</button>
     <p id="background-status" class="inline-message muted" role="status" hidden></p>
   </section>
+
+  <aside id="basic-window" class="basic-window floating-panel glass" aria-labelledby="basic-heading" hidden>
+    <div class="inspector-bar">
+      <h2 id="basic-heading" data-i18n="basic">基础</h2>
+      <button id="close-basic" type="button" class="quiet close" aria-label="关闭基础面板" data-i18n-aria-label="closeBasic">×</button>
+    </div>
+    <div class="basic-content">
+      <div class="basic-effect">
+        <label class="basic-toggle">
+          <span data-i18n="headSway">头部晃动</span>
+          <input type="checkbox" class="toggle-switch" role="switch" data-effect="headSway" autocomplete="off">
+        </label>
+      </div>
+      <div class="basic-effect">
+        <label class="basic-toggle">
+          <span data-i18n="physics">物理摆动</span>
+          <input type="checkbox" class="toggle-switch" role="switch" data-effect="physics" autocomplete="off">
+        </label>
+        <label class="basic-setting">
+          <span data-i18n="effectStrength">强度</span>
+          <input type="range" min="0" max="200" step="5" value="100" data-effect="physicsStrength" data-requires="physics" data-unit="%" aria-label="物理摆动强度" data-i18n-aria-label="physicsStrength">
+          <output>100%</output>
+        </label>
+      </div>
+      <div class="basic-effect">
+        <label class="basic-toggle">
+          <span data-i18n="breathing">自然呼吸</span>
+          <input type="checkbox" class="toggle-switch" role="switch" data-effect="breathing" autocomplete="off">
+        </label>
+        <label class="basic-setting">
+          <span data-i18n="effectStrength">强度</span>
+          <input type="range" min="0" max="200" step="5" value="100" data-effect="breathStrength" data-requires="breathing" data-unit="%" aria-label="自然呼吸强度" data-i18n-aria-label="breathStrength">
+          <output>100%</output>
+        </label>
+      </div>
+      <div class="basic-effect">
+        <label class="basic-toggle">
+          <span data-i18n="eyeBlink">自动眨眼</span>
+          <input type="checkbox" class="toggle-switch" role="switch" data-effect="eyeBlink" autocomplete="off">
+        </label>
+        <label class="basic-setting">
+          <span data-i18n="effectInterval">间隔</span>
+          <input type="range" min="1" max="10" step="0.5" value="4" data-effect="blinkInterval" data-requires="eyeBlink" data-unit=" s" aria-label="眨眼间隔（秒）" data-i18n-aria-label="blinkInterval">
+          <output>4 s</output>
+        </label>
+      </div>
+      <div class="basic-effect">
+        <label class="basic-toggle">
+          <span data-i18n="gazeFollow">视线跟随</span>
+          <input type="checkbox" class="toggle-switch" role="switch" data-effect="gazeFollow" autocomplete="off">
+        </label>
+      </div>
+    </div>
+  </aside>
 
   <aside id="animation-window" class="animation-window floating-panel glass" aria-labelledby="animation-heading" hidden>
     <div class="inspector-bar">

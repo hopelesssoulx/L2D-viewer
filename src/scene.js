@@ -113,6 +113,20 @@ export class ModelScene {
     this.#app.ticker.add(() => {
       for (const model of this.models) model.advance(this.#app.ticker.deltaMS);
     });
+    this.#app.view.addEventListener("pointermove", (event) => {
+      if (event.pointerType === "touch") return;
+      let point;
+      for (const model of this.models) {
+        if (!model.effects.settings.gazeFollow) continue;
+        point ??= this.#canvasPoint(event.clientX, event.clientY);
+        model.display.focus(point.x, point.y);
+      }
+    });
+    this.#app.view.addEventListener("pointerleave", () => {
+      for (const model of this.models) {
+        if (model.effects.settings.gazeFollow) model.display.internalModel.focusController.focus(0, 0);
+      }
+    });
     new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
       if (width < 1 || height < 1) return;
@@ -127,12 +141,16 @@ export class ModelScene {
     return this.#placements.get(this.selected);
   }
 
-  #pick(clientX, clientY) {
+  #canvasPoint(clientX, clientY) {
     const { left, top, width, height } = this.#app.view.getBoundingClientRect();
-    const point = new this.pixi.Point(
+    return new this.pixi.Point(
       (clientX - left) * this.#app.screen.width / width,
       (clientY - top) * this.#app.screen.height / height
     );
+  }
+
+  #pick(clientX, clientY) {
+    const point = this.#canvasPoint(clientX, clientY);
     for (let i = this.models.length - 1; i >= 0; i--) {
       const model = this.models[i];
       if (hitsModel(model, point)) return model;

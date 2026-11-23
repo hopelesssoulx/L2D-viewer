@@ -2,6 +2,7 @@ import {
   createCubism2Pose, cubism2MotionEntry, sampleCubism2Motion, setupCubism2Expressions, setupCubism2Motions,
 } from "./cubism2.js";
 import { t, ViewerError } from "./i18n.js";
+import { setupModelEffects } from "./model-effects.js";
 import { readParameterDescriptions } from "./parameter-descriptions.js";
 import { readParameterGroups } from "./parameter-groups.js";
 
@@ -150,6 +151,7 @@ export class ViewerModel {
       this.#pose = createCubism4Pose(this.#core);
     }
     const { parameters } = this.#pose;
+    this.effects = setupModelEffects(internal, parameters, cubism2);
     this.#initialPartOpacities = this.#pose.readParts();
     this.parameters = Array.from(parameters.ids, (id, index) => ({
       id,
@@ -273,11 +275,13 @@ export class ViewerModel {
     const animationValues = this.#pose.parameters.values.slice();
     const opacities = this.#pose.readParts();
     const { motionChoice, loopMotion, expressionChoice } = this;
+    const effects = { ...this.effects.settings };
     const progress = this.motionProgress;
     const copy = await ViewerModel.load(pixi, this.source.clone(), onProgress);
     try {
       copy.motionChoice = motionChoice;
       copy.loopMotion = loopMotion;
+      copy.effects.set(effects);
       if (progress) {
         await copy.playMotion();
         const entry = copy.#motionEntry();

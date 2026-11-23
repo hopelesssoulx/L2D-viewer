@@ -1,4 +1,5 @@
 import { AnimationControls } from "./animation-controls.js";
+import { setupBasicControls } from "./basic-controls.js";
 import { setupFolderDrop } from "./folder-drop.js";
 import { getLanguage, setLanguage, t, translatePage, ViewerError } from "./i18n.js";
 import { discoverLocalModels } from "./local-model-source.js";
@@ -23,6 +24,8 @@ const stage = $("stage");
 const report = $("load-report");
 const loadProgress = $("load-progress");
 const dismissReport = $("dismiss-report");
+const basicWindow = $("basic-window");
+const toggleBasic = $("toggle-basic");
 const animationWindow = $("animation-window");
 const toggleAnimation = $("toggle-animation");
 const inspectorWindow = $("inspector");
@@ -69,6 +72,7 @@ const strip = new ModelStrip($("model-strip"), toggleSelection, (model, index) =
 const refreshTransform = setupTransformControls(
   transformWindow, () => scene?.placement, (changes) => scene.setPlacement(changes)
 );
+const refreshBasic = setupBasicControls(basicWindow, () => scene?.selected);
 
 function reportLoad(key, { errors = [], args, progress } = {}) {
   report.hidden = !key;
@@ -100,6 +104,15 @@ function setJSONStatus(message, error = false) {
     jsonStatus.classList.toggle("error", error);
   };
   renderJSONStatus();
+}
+
+function setBasic(open) {
+  basicWindow.hidden = !open;
+  toggleBasic.setAttribute("aria-expanded", open);
+  if (open) {
+    revealBasic();
+    refreshBasic();
+  }
 }
 
 function setAnimation(open) {
@@ -140,7 +153,7 @@ function syncPlayback() {
     button.disabled = !model || model.loadingMotion;
     button.textContent = t(model?.paused ? "resume" : "pause");
   }
-  toggleAnimation.disabled = toggleInspector.disabled = toggleTransform.disabled = !model;
+  toggleBasic.disabled = toggleAnimation.disabled = toggleInspector.disabled = toggleTransform.disabled = !model;
   if (!model) {
     playbackState.textContent = "";
     return;
@@ -160,10 +173,12 @@ function updateSelection() {
   panel.select(model);
   animation.select();
   if (!model) {
+    setBasic(false);
     setAnimation(false);
     setInspector(false);
     setTransform(false);
   } else {
+    refreshBasic();
     refreshTransform();
     setJSONStatus(() => t("jsonHint"));
   }
@@ -283,10 +298,11 @@ function setupPanelToggle(button, close, window, setOpen) {
 }
 
 const localizeToolbar = setupToolbar($("toolbar-dock"), toolbar, $("pin-toolbar"), $("reveal-toolbar"));
-const floatingPanels = [animationWindow, inspectorWindow, transformWindow];
+const floatingPanels = [basicWindow, animationWindow, inspectorWindow, transformWindow];
 function bringForward(panel) {
   for (const floatingPanel of floatingPanels) floatingPanel.toggleAttribute("data-front", panel === floatingPanel);
 }
+const revealBasic = setupFloatingPanel(basicWindow, bringForward);
 const revealAnimation = setupFloatingPanel(animationWindow, bringForward);
 const revealInspector = setupFloatingPanel(inspectorWindow, bringForward);
 const revealTransform = setupFloatingPanel(transformWindow, bringForward);
@@ -297,6 +313,7 @@ new ResizeObserver(() => {
   }
 }).observe(transformWindow);
 const localizeBackground = setupBackground(stage, $("background-popover"), $("background-input"), $("upload-background"), $("background-status"));
+setupPanelToggle(toggleBasic, $("close-basic"), basicWindow, setBasic);
 setupPanelToggle(toggleAnimation, $("close-animation"), animationWindow, setAnimation);
 setupPanelToggle(toggleInspector, $("close-inspector"), inspectorWindow, setInspector);
 setupPanelToggle(toggleTransform, $("close-transform"), transformWindow, setTransform);
