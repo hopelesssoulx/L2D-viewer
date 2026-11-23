@@ -16,6 +16,7 @@ const $ = (id) => document.getElementById(id);
 const add = $("add-models");
 const resourceModels = $("resource-models");
 const importURL = $("import-url");
+const modelURL = $("model-url");
 const folder = $("folder-input");
 const toolbar = $("toolbar");
 const stage = $("stage");
@@ -131,7 +132,7 @@ function syncPlayback() {
   animation.sync();
   refreshMotionProgress();
   const busy = model?.loadingMotion || model?.loadingExpression;
-  add.disabled = importURL.disabled = loadingModels;
+  add.disabled = importURL.disabled = modelURL.disabled = loadingModels;
   resourceModels.disabled = loadingModels || resourceModels.options.length < 2;
   copy.disabled = loadingModels || !model || busy;
   remove.disabled = loadingModels || !model || busy;
@@ -335,9 +336,7 @@ if (scene) {
   });
   $("model-url-form").addEventListener("submit", (event) => {
     event.preventDefault();
-    const address = $("model-url").value;
-    $("model-url-popover").hidePopover();
-    void importModels(() => [new URLModelSource(address)]);
+    void importModels(() => [new URLModelSource(modelURL.value)]);
   });
   void populateResourceModels();
   for (const button of playbackButtons) {

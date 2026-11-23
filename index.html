@@ -39,7 +39,10 @@
         <select id="resource-models" class="resource-models" aria-label="仓库模型" data-i18n-aria-label="resourceModels" autocomplete="off" disabled>
           <option value="" data-i18n="resourceModels">仓库模型</option>
         </select>
-        <button id="import-url" type="button" popovertarget="model-url-popover" aria-label="从链接导入模型" data-i18n-aria-label="importURL" data-i18n="urlShort" disabled>链接</button>
+        <form id="model-url-form" class="model-url-form">
+          <input id="model-url" type="url" aria-label="模型 JSON 链接" data-i18n-aria-label="modelURL" title="输入模型描述文件的直链。跨站链接需要支持 CORS。" data-i18n-title="modelURLHint" placeholder="https://…/model.model3.json" autocomplete="off" spellcheck="false" required disabled>
+          <button id="import-url" type="submit" data-i18n="importURL" disabled>链接导入</button>
+        </form>
         <div class="model-actions">
           <button id="toggle-playback" type="button" disabled data-i18n="pause" hidden>暂停</button>
           <button id="copy-model" type="button" aria-label="复制选中的模型" data-i18n-aria-label="copyModel" disabled data-i18n="copy">复制</button>
@@ -47,8 +50,8 @@
         </div>
         <div class="tool-spacer"></div>
         <div class="view-actions">
-          <button id="toggle-animation" type="button" aria-expanded="false" aria-controls="animation-window" aria-label="动作与表情" data-i18n-aria-label="animationPanel" disabled data-i18n="animation">动画</button>
-          <button id="toggle-inspector" type="button" aria-expanded="false" aria-controls="inspector" disabled aria-label="参数检查器" data-i18n-aria-label="inspector"><span data-i18n="parametersShort">参数</span><span class="wide-label" data-i18n="inspectorSuffix">检查器</span></button>
+          <button id="toggle-animation" type="button" aria-expanded="false" aria-controls="animation-window" disabled data-i18n="animationPanel">动作和表情</button>
+          <button id="toggle-inspector" type="button" aria-expanded="false" aria-controls="inspector" disabled data-i18n="inspector">参数</button>
           <button id="toggle-transform" type="button" aria-expanded="false" aria-controls="transform-window" disabled data-i18n="transform">变换</button>
           <button id="background-tools" type="button" popovertarget="background-popover" data-i18n="background" aria-label="画布背景" data-i18n-aria-label="canvasBackground">背景</button>
           <button id="theme-toggle" type="button" class="theme-switch" role="switch" aria-label="深色模式" data-i18n-aria-label="darkMode" aria-checked="false">
@@ -83,15 +86,6 @@
     </label>
   </template>
 
-  <section id="model-url-popover" class="tool-popover glass" popover="auto" aria-labelledby="model-url-heading">
-    <h2 id="model-url-heading" data-i18n="importURL">从链接导入模型</h2>
-    <form id="model-url-form" class="model-url-form">
-      <input id="model-url" type="url" aria-label="模型 JSON 链接" data-i18n-aria-label="modelURL" aria-describedby="model-url-hint" placeholder="https://…/model.model3.json" autocomplete="off" spellcheck="false" required autofocus>
-      <button type="submit" class="primary" data-i18n="addFromURL">导入</button>
-    </form>
-    <p id="model-url-hint" class="inline-message muted" data-i18n="modelURLHint">输入模型描述文件的直链。跨站链接需要支持 CORS。</p>
-  </section>
-
   <section id="background-popover" class="tool-popover glass" popover="auto" aria-labelledby="background-heading">
     <h2 id="background-heading" data-i18n="canvasBackground">画布背景</h2>
     <div class="background-swatches" aria-label="预设颜色" data-i18n-aria-label="backgroundPresets">
@@ -108,8 +102,8 @@
 
   <aside id="animation-window" class="animation-window floating-panel glass" aria-labelledby="animation-heading" hidden>
     <div class="inspector-bar">
-      <h2 id="animation-heading" data-i18n="animationPanel">动作与表情</h2>
-      <button id="close-animation" type="button" class="quiet close" aria-label="关闭动作与表情" data-i18n-aria-label="closeAnimation">×</button>
+      <h2 id="animation-heading" data-i18n="animationPanel">动作和表情</h2>
+      <button id="close-animation" type="button" class="quiet close" aria-label="关闭动作和表情" data-i18n-aria-label="closeAnimation">×</button>
     </div>
     <div class="animation-content">
       <div class="animation-lists">
@@ -131,8 +125,8 @@
 
   <aside id="inspector" class="inspector floating-panel glass" aria-labelledby="inspector-heading" hidden>
     <div id="inspector-bar" class="inspector-bar">
-      <h2 id="inspector-heading" data-i18n="inspector">参数检查器</h2>
-      <button id="close-inspector" type="button" class="quiet close" aria-label="关闭参数检查器" data-i18n-aria-label="closeInspector">×</button>
+      <h2 id="inspector-heading" data-i18n="inspector">参数</h2>
+      <button id="close-inspector" type="button" class="quiet close" aria-label="关闭参数面板" data-i18n-aria-label="closeInspector">×</button>
     </div>
     <div class="inspector-content">
       <div id="inspector-motion-progress" class="motion-progress" data-loop-host>
@@ -140,7 +134,7 @@
         <input type="number" min="0" max="0" step="1" inputmode="numeric" value="0" aria-label="当前动作帧" data-i18n-aria-label="motionFrame" disabled>
         <span data-last-frame class="muted"></span>
       </div>
-      <div class="panel-switch" aria-label="检查器面板" data-i18n-aria-label="inspectorPanels">
+      <div class="panel-switch" aria-label="参数面板" data-i18n-aria-label="inspectorPanels">
         <button id="show-parameters" type="button" aria-pressed="true" aria-controls="parameters-view" data-i18n="motionParameterTab" aria-label="动作参数" data-i18n-aria-label="motionParameters">动作参数</button>
         <button id="show-expression-parameters" type="button" aria-pressed="false" aria-controls="parameters-view" data-i18n="expressionParameterTab" aria-label="表情参数" data-i18n-aria-label="expressionParameters">表情参数</button>
         <button id="show-json" type="button" aria-pressed="false" aria-controls="json-view" data-i18n="snapshotTab" aria-label="JSON 快照" data-i18n-aria-label="snapshot">JSON 快照</button>
@@ -171,22 +165,22 @@
 
   <aside id="transform-window" class="transform-window floating-panel glass" aria-labelledby="transform-heading" hidden>
     <div class="inspector-bar">
-      <h2 id="transform-heading" data-i18n="modelTransform">模型变换</h2>
-      <button id="close-transform" type="button" class="quiet close" aria-label="关闭模型变换" data-i18n-aria-label="closeTransform">×</button>
+      <h2 id="transform-heading" data-i18n="transform">变换</h2>
+      <button id="close-transform" type="button" class="quiet close" aria-label="关闭变换面板" data-i18n-aria-label="closeTransform">×</button>
     </div>
     <div class="transform-content">
       <div class="transform-position">
         <div class="direction-pad" role="group" aria-label="移动方向" data-i18n-aria-label="moveDirections">
-          <button type="button" class="move-up" aria-label="向上移动" data-i18n-aria-label="moveUp" data-axis="y" data-increment="-10">↑</button>
-          <button type="button" class="move-left" aria-label="向左移动" data-i18n-aria-label="moveLeft" data-axis="x" data-increment="-10">←</button>
-          <button type="button" class="move-down" aria-label="向下移动" data-i18n-aria-label="moveDown" data-axis="y" data-increment="10">↓</button>
-          <button type="button" class="move-right" aria-label="向右移动" data-i18n-aria-label="moveRight" data-axis="x" data-increment="10">→</button>
+          <button type="button" class="move-up" aria-label="向上移动" data-i18n-aria-label="moveUp" data-axis="y" data-increment="-20">↑</button>
+          <button type="button" class="move-left" aria-label="向左移动" data-i18n-aria-label="moveLeft" data-axis="x" data-increment="-20">←</button>
+          <button type="button" class="move-down" aria-label="向下移动" data-i18n-aria-label="moveDown" data-axis="y" data-increment="20">↓</button>
+          <button type="button" class="move-right" aria-label="向右移动" data-i18n-aria-label="moveRight" data-axis="x" data-increment="20">→</button>
         </div>
         <div class="position-fields">
           <label class="transform-field">X <input type="number" step="any" data-placement-field="x" aria-label="横向位置" data-i18n-aria-label="positionX"><span>px</span></label>
           <label class="transform-field">Y <input type="number" step="any" data-placement-field="y" aria-label="纵向位置" data-i18n-aria-label="positionY"><span>px</span></label>
-          <button type="button" class="reset-position" data-reset="position" title="重置到展示区左侧" data-i18n-title="resetPositionHint" data-i18n="resetPosition">重置位置</button>
         </div>
+        <button type="button" data-reset="position" title="重置到展示区左侧" data-i18n-title="resetPositionHint" data-i18n="resetPosition">重置位置</button>
       </div>
       <div class="transform-line">
         <button type="button" aria-label="逆时针旋转" data-i18n-aria-label="rotateLeft" data-axis="angle" data-increment="-5">↶</button>
