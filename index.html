@@ -222,7 +222,13 @@
       </div>
       <section id="parameters-view" class="parameters-view" aria-label="实时参数" data-i18n-aria-label="liveParameters">
         <div class="parameter-toolbar">
-          <input id="parameter-search" type="search" placeholder="搜索参数 ID" data-i18n-placeholder="findParameter" aria-label="搜索参数 ID" data-i18n-aria-label="findParameter">
+          <div class="parameter-search-controls">
+            <input id="parameter-search" type="search" placeholder="搜索参数 ID" data-i18n-placeholder="findParameter" aria-label="搜索参数 ID" data-i18n-aria-label="findParameter">
+            <label class="parameter-scope">
+              <input id="parameter-only-used" type="checkbox" class="toggle-switch" role="switch" aria-label="仅显示当前动作或表情用到的参数" data-i18n-aria-label="onlyUsedParameters" autocomplete="off">
+              <span data-i18n="onlyUsedLabel">仅当前</span>
+            </label>
+          </div>
           <select id="parameter-group" aria-label="参数组" data-i18n-aria-label="parameterGroup">
             <option value="" data-i18n="allParameterGroups">全部参数组</option>
             <option value="other" data-i18n="parameterGroupOther">其他</option>

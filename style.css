@@ -14,6 +14,7 @@
   --hover: #eaf0fa;
   --accent: #284d9c;
   --accent-wash: #e3eafa;
+  --parameter-used: #17284a12;
   --primary: #345caf;
   --primary-hover: #284b96;
   --primary-text: #fff;
@@ -48,6 +49,7 @@
   --hover: #313e59;
   --accent: #bdcefb;
   --accent-wash: #34476d;
+  --parameter-used: #060a145e;
   --primary: #a8bef4;
   --primary-hover: #bfd0fc;
   --primary-text: #142246;
@@ -467,14 +469,17 @@ body:has(.transform-window:not([hidden], [data-moved])) .animation-window:not([d
 #inspector-playback { margin-inline-start: auto; }
 .parameters-view, .json-view { flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 12px 14px; }
 .parameter-toolbar { display: flex; align-items: center; gap: 9px; }
-.parameter-toolbar input { flex: 1; padding: 6px 9px; }
+.parameter-search-controls { display: flex; flex: 1; min-width: 0; align-items: center; gap: 7px; }
+.parameter-search-controls input[type="search"] { flex: 1; padding: 6px 9px; }
+.parameter-scope { display: flex; align-items: center; gap: 5px; white-space: nowrap; font-size: .8rem; color: var(--muted); cursor: pointer; }
 .parameter-toolbar select { padding: 6px; }
-.parameter-toolbar span { flex: none; margin-inline-start: auto; font-size: .8rem; }
+#parameter-count { flex: none; margin-inline-start: auto; font-size: .8rem; }
 .parameter-hint, .inline-message { margin-top: 7px; font-size: .8rem; overflow-wrap: anywhere; }
 .parameter-hint { margin-bottom: 7px; }
 .parameter-empty { margin-top: 8px; font-size: .85rem; }
 .parameter-list { flex: 1; overflow: auto; padding: 0 4px; margin: 0 -4px; overscroll-behavior: contain; }
-.parameter-row { padding: 5px 0; border-bottom: 1px solid var(--line); }
+.parameter-row { padding: 5px 4px; border-bottom: 1px solid var(--line); }
+.parameter-row[data-clip-used] { background: var(--parameter-used); }
 .parameter-header, .parameter-inputs { display: flex; align-items: center; justify-content: space-between; gap: 7px; }
 .parameter-header label {
   font: .83rem ui-monospace, monospace;
@@ -645,11 +650,11 @@ input.toggle-switch:disabled { opacity: .55; cursor: default; }
   .panel-switch { padding-block: 6px; }
   .panel-switch button, .json-actions button { min-height: 29px; padding-inline: 7px; }
   .json-view { flex: 1 0 180px; overflow: visible; }
+  .parameter-toolbar { flex-wrap: wrap; gap: 6px 9px; }
+  .parameter-search-controls { flex-basis: 100%; }
 }
 
 @media (max-width: 360px) {
-  .parameter-toolbar { flex-wrap: wrap; gap: 6px 9px; }
-  .parameter-toolbar input { flex-basis: 100%; }
   .tool-row { gap: 1px; }
   .tool-row button { padding-inline: 2px; }
   .model-actions, .view-actions { gap: 1px; }

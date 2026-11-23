@@ -122,6 +122,7 @@ export class ViewerModel {
   #activeMotionIndex = -1;
   #previewEntry;
   #expressionManager;
+  #expressionParameterIds;
   #expression;
   #expressionFade;
   #expressionLayers = new Map();
@@ -160,8 +161,8 @@ export class ViewerModel {
         index,
         description: info?.description,
         displayGroup: info?.displayGroup ?? inferDisplayGroup(id),
-        motion: groups.motion.has(id) || !groups.expression.has(id),
-        expression: groups.expression.has(id),
+        motion: groups.motion.all.has(id) || !groups.expression.all.has(id),
+        expression: groups.expression.all.has(id),
         min: parameters.minimumValues[index],
         max: parameters.maximumValues[index],
         defaultValue: parameters.defaultValues[index],
@@ -173,13 +174,19 @@ export class ViewerModel {
     this.#blendedValues = new Float32Array(parameters.count);
     this.motions = Object.entries(internal.motionManager.definitions).flatMap(([group, motions]) =>
       motions.map(({ File, file }, index) => {
-        const name = (File ?? file).split(/[\\/]/).at(-1).replace(/\.(?:motion3\.json|mtn)$/i, "");
-        return { group, index, label: group && group !== name ? `${group} / ${name}` : name };
+        const reference = File ?? file;
+        const name = reference.split(/[\\/]/).at(-1).replace(/\.(?:motion3\.json|mtn)$/i, "");
+        return {
+          group, index, label: group && group !== name ? `${group} / ${name}` : name,
+          parameterIds: groups.motion.byFile.get(reference),
+        };
       })
     );
 
     this.#expressionManager = internal.motionManager.expressionManager;
-    this.expressions = (this.#expressionManager?.definitions ?? []).map(({ Name, name, File, file }) =>
+    const expressionDefinitions = this.#expressionManager?.definitions ?? [];
+    this.#expressionParameterIds = expressionDefinitions.map(({ File, file }) => groups.expression.byFile.get(File ?? file));
+    this.expressions = expressionDefinitions.map(({ Name, name, File, file }) =>
       (Name || name || (File ?? file).split(/[\\/]/).at(-1)).replace(/\.exp(?:3(?:\.json)?|\.json)$/i, "")
     );
     if (this.#expressionManager && cubism2) {
@@ -436,6 +443,11 @@ export class ViewerModel {
   #motionEntry() {
     const manager = this.display.internalModel.motionManager;
     return this.cubism2 ? cubism2MotionEntry(manager) : manager.queueManager._motions[0];
+  }
+
+  usedParameterIds(category) {
+    if (category === "expression") return this.#expressionParameterIds[this.expressionChoice];
+    return this.#activeMotion && this.motions[this.#activeMotionIndex]?.parameterIds;
   }
 
   get motionProgress() {

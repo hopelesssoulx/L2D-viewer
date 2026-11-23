@@ -9,9 +9,10 @@ export class ParameterPanel {
   #rows = [];
   #category = "motion";
 
-  constructor({ view, search, groupFilter, count, hint, empty, list, onPlayback }) {
+  constructor({ view, search, onlyUsed, groupFilter, count, hint, empty, list, onPlayback }) {
     this.view = view;
     this.search = search;
+    this.onlyUsed = onlyUsed;
     this.groupFilter = groupFilter;
     this.count = count;
     this.hint = hint;
@@ -25,6 +26,10 @@ export class ParameterPanel {
       otherGroup.before(option);
     }
     this.search.addEventListener("input", () => this.#filter());
+    this.onlyUsed.addEventListener("change", () => {
+      this.list.scrollTop = 0;
+      this.#filter();
+    });
     this.groupFilter.addEventListener("change", () => {
       this.list.scrollTop = 0;
       this.#filter();
@@ -60,7 +65,6 @@ export class ParameterPanel {
       reset.title = t("resetDefault");
       reset.setAttribute("aria-label", t("parameterReset", { id }));
     }
-    this.#filter();
     this.syncPlayback();
   }
 
@@ -125,10 +129,14 @@ export class ParameterPanel {
   #filter() {
     const query = this.search.value.trim().toLowerCase();
     const group = this.groupFilter.value;
+    const usedIds = this.#model?.usedParameterIds(this.#category);
     let count = 0;
     let matches = 0;
     for (const entry of this.#rows) {
-      const inScope = entry.parameter[this.#category] && matchesDisplayGroup(entry.parameter.displayGroup, group);
+      const used = usedIds?.has(entry.parameter.id) ?? false;
+      entry.row.toggleAttribute("data-clip-used", used);
+      const inScope = entry.parameter[this.#category] && (!this.onlyUsed.checked || used)
+        && matchesDisplayGroup(entry.parameter.displayGroup, group);
       if (inScope) count++;
       entry.matches = inScope && entry.filterKey.includes(query);
       entry.row.hidden = !entry.matches;
@@ -148,7 +156,7 @@ export class ParameterPanel {
       number.readOnly = !canEdit;
       reset.disabled = this.#model.loadingMotion || this.#model.loadingExpression;
     }
-    this.refreshValues();
+    this.#filter();
   }
 
   refreshValues() {
