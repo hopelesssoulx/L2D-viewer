@@ -1,5 +1,5 @@
 const defaults = {
-  headSway: true,
+  headSwayStrength: 100,
   physics: true,
   physicsStrength: 100,
   breathing: true,
@@ -17,18 +17,23 @@ function setupNaturalMovements(internal, parameters, swayIndices, breathIndex, s
   const update = internal.updateNaturalMovements.bind(internal);
   const beforeSway = new Float32Array(swayIndices.length);
   internal.updateNaturalMovements = (delta, now) => {
-    const weight = settings.breathing ? settings.breathStrength / 100 : 0;
+    const swayWeight = settings.headSwayStrength / 100;
+    const breathWeight = settings.breathing ? settings.breathStrength / 100 : 0;
     const values = parameters.values;
     const beforeBreath = values[breathIndex];
-    if (!settings.headSway) {
+    if (swayWeight !== 1) {
       for (const [slot, index] of swayIndices.entries()) beforeSway[slot] = values[index];
     }
     update(delta, now);
-    if (!settings.headSway) {
-      for (const [slot, index] of swayIndices.entries()) values[index] = beforeSway[slot];
+    if (swayWeight !== 1) {
+      for (const [slot, index] of swayIndices.entries()) {
+        const before = beforeSway[slot];
+        const value = before + (values[index] - before) * swayWeight;
+        values[index] = clampParameter(parameters, index, value);
+      }
     }
-    if (breathIndex >= 0 && weight !== 1) {
-      const value = beforeBreath + (values[breathIndex] - beforeBreath) * weight;
+    if (breathIndex >= 0 && breathWeight !== 1) {
+      const value = beforeBreath + (values[breathIndex] - beforeBreath) * breathWeight;
       values[breathIndex] = clampParameter(parameters, breathIndex, value);
     }
   };
@@ -99,7 +104,7 @@ export function setupModelEffects(internal, parameters, cubism2) {
   const blink = internal.eyeBlink;
   const blinkIds = cubism2 ? ["PARAM_EYE_L_OPEN", "PARAM_EYE_R_OPEN"] : blink?.getParameterIds() ?? [];
   const supported = {
-    headSway: swayIndices.length > 0,
+    headSwayStrength: swayIndices.length > 0,
     physics: Boolean(internal.physics),
     breathing: breathIndex >= 0,
     eyeBlink: Boolean(blink && blinkIds.some((id) => ids.includes(id))),

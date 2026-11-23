@@ -89,6 +89,8 @@ const messages = {
   basic: ["基础", "Basic"],
   closeBasic: ["关闭基础面板", "Close basic panel"],
   headSway: ["头部晃动", "Head sway"],
+  headSwayStrength: ["头部晃动强度", "Head sway strength"],
+  resetHeadSwayStrength: ["重置头部晃动强度", "Reset head sway strength"],
   physics: ["物理摆动", "Physics"],
   breathing: ["自然呼吸", "Breathing"],
   eyeBlink: ["自动眨眼", "Automatic blinking"],
