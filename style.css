@@ -90,18 +90,20 @@ button.primary:hover:not(:disabled) { background: var(--primary-hover); }
 .error { color: var(--danger); }
 
 .stage {
+  --stage-pattern: radial-gradient(circle, var(--stage-dot) 1px, transparent 1.5px) center / 22px 22px;
   position: fixed;
   inset: 0;
   overflow: hidden;
   background:
-    radial-gradient(circle, var(--stage-dot) 1px, transparent 1.5px) center / 22px 22px,
+    var(--stage-pattern),
     radial-gradient(ellipse at 21% 24%, var(--stage-light), transparent 63%),
     radial-gradient(ellipse at 83% 76%, var(--stage-glow), transparent 60%),
     var(--stage-base);
   touch-action: none;
 }
-.stage[data-background="solid"] { background: var(--custom-background); }
-.stage[data-background="image"] { background: var(--custom-background) center / cover no-repeat, var(--stage-base); }
+.stage[data-dots-hidden] { --stage-pattern: none; }
+.stage[data-background="solid"] { background: var(--stage-pattern), var(--custom-background); }
+.stage[data-background="image"] { background: var(--stage-pattern), var(--custom-background) center / cover no-repeat, var(--stage-base); }
 .stage canvas { display: block; }
 .stage:has(canvas[data-mouse-controls]) { cursor: grab; }
 .stage:has(canvas[data-dragging]) { cursor: grabbing; }
@@ -343,6 +345,7 @@ button.primary:hover:not(:disabled) { background: var(--primary-hover); }
 }
 .swatch { width: 100%; height: 24px; border: 1px solid var(--line); border-radius: 5px; background: var(--swatch); }
 .theme-swatch { background: linear-gradient(145deg, var(--stage-base) 30%, var(--stage-light)); }
+.background-dots { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; font-size: .84rem; cursor: pointer; }
 .background-upload { margin-top: 10px; width: 100%; }
 
 .floating-panel {

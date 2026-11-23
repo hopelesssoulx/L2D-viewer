@@ -137,8 +137,13 @@ export function setupFloatingPanel(panel, bringForward) {
 
 export function setupBackground(stage, popup, input, upload, status) {
   const presets = [...popup.querySelectorAll("[data-background]")];
+  const dots = popup.querySelector("#background-dots");
   let imageURL = null;
   let choice = 0;
+
+  const updateDots = () => stage.toggleAttribute("data-dots-hidden", !dots.checked);
+  dots.addEventListener("change", updateDots);
+  updateDots();
 
   function setStatus(message, error = false) {
     status.textContent = message;
