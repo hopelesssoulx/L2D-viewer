@@ -204,9 +204,73 @@
         </label>
       </div>
       <div class="animation-playback" data-loop-host>
+        <button type="button" data-edit-motion data-i18n="motionEditor" disabled>动作编辑</button>
         <button type="button" data-play-motion data-i18n="replay">（重）播放</button>
       </div>
       <p class="animation-error error" data-animation-error role="status" hidden></p>
+    </div>
+  </aside>
+
+  <aside id="motion-editor" class="motion-editor floating-panel glass" aria-labelledby="motion-editor-heading" hidden>
+    <div class="inspector-bar">
+      <h2 id="motion-editor-heading" data-i18n="motionEditor">动作编辑</h2>
+      <span class="motion-editor-model muted" data-editor-model></span>
+      <button id="close-motion-editor" type="button" class="quiet close" aria-label="关闭动作编辑"
+        data-i18n-aria-label="closeMotionEditor">×</button>
+    </div>
+    <div class="motion-editor-content">
+      <div class="motion-editor-row">
+        <label class="motion-editor-field motion-editor-wide">
+          <span data-i18n="editorSource">动作来源</span>
+          <select data-editor-source></select>
+        </label>
+        <button type="button" data-editor-new data-i18n="editorNew">新建动作</button>
+        <button type="button" data-editor-current data-i18n="editorFromPose">从当前姿势新建</button>
+        <label class="motion-editor-field motion-editor-wide">
+          <span data-i18n="editorName">动作名称</span>
+          <input type="text" data-editor-name autocomplete="off">
+        </label>
+        <label class="motion-editor-field">
+          <span data-i18n="editorDuration">时长（秒）</span>
+          <input type="number" data-editor-duration min="0.001" step="any" inputmode="decimal"
+            title="更改时长会同比调整关键帧时间" data-i18n-title="editorRetiming">
+        </label>
+        <label class="motion-editor-field">
+          <span data-i18n="editorFPS">帧率</span>
+          <input type="number" data-editor-fps min="1" step="any" inputmode="decimal">
+        </label>
+      </div>
+      <div class="motion-editor-row">
+        <label class="motion-editor-field motion-editor-wide">
+          <span data-i18n="editorParameter">参数曲线</span>
+          <select data-editor-parameter></select>
+        </label>
+        <label class="motion-editor-field">
+          <span data-i18n="editorValue">参数值</span>
+          <input type="number" data-editor-value step="any" inputmode="decimal">
+        </label>
+        <button type="button" data-editor-key data-i18n="editorWriteKey">写入关键帧</button>
+        <button type="button" data-editor-delete data-i18n="editorDeleteKey">删除关键帧</button>
+        <label class="motion-editor-field motion-editor-wide">
+          <span data-i18n="editorExpression">预览表情</span>
+          <select data-editor-expression></select>
+        </label>
+        <button type="button" data-editor-bake data-i18n="editorBakeExpression">将表情写入当前帧</button>
+      </div>
+      <canvas class="motion-editor-graph" data-editor-graph aria-hidden="true"></canvas>
+      <div class="motion-editor-row motion-editor-transport">
+        <button type="button" data-editor-play>播放</button>
+        <input type="range" data-editor-time min="0" max="0" step="1" value="0"
+          aria-label="动作进度" data-i18n-aria-label="motionProgress">
+        <input type="number" data-editor-frame min="0" max="0" step="1" value="0" inputmode="numeric"
+          aria-label="当前动作帧" data-i18n-aria-label="motionFrame">
+        <output class="muted" data-editor-time-label></output>
+      </div>
+      <div class="motion-editor-row motion-editor-actions">
+        <p class="muted" role="status" data-editor-status></p>
+        <button type="button" data-editor-export data-i18n="editorExport">导出动作</button>
+        <button type="button" class="primary" data-editor-save data-i18n="editorSave">加入动作列表</button>
+      </div>
     </div>
   </aside>
 

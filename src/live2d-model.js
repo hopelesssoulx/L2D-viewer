@@ -4,7 +4,7 @@ import {
 import { t, ViewerError } from "./i18n.js";
 import { setupModelEffects } from "./model-effects.js";
 import { inferDisplayGroup, readParameterDisplayInfo } from "./parameter-display-info.js";
-import { changedMotionParameterIds, readParameterGroups } from "./parameter-groups.js";
+import { changedMotionParameterIds, motion3Tracks, readParameterGroups } from "./parameter-groups.js";
 
 function prepareSettings(json, source, live2d) {
   const runtime = live2d.Live2DFactory.findRuntime(json);
@@ -121,6 +121,8 @@ export class ViewerModel {
   #activeMotion;
   #activeMotionIndex = -1;
   #previewEntry;
+  #draftPose;
+  #customMotionGroup;
   #expressionManager;
   #expressionParameterIds;
   #expression;
@@ -177,7 +179,7 @@ export class ViewerModel {
         const reference = File ?? file;
         const name = reference.split(/[\\/]/).at(-1).replace(/\.(?:motion3\.json|mtn)$/i, "");
         return {
-          group, index, label: group && group !== name ? `${group} / ${name}` : name,
+          group, index, reference, label: group && group !== name ? `${group} / ${name}` : name,
           parameterIds: changedMotionParameterIds(groups.motionTracks.get(reference), this.parameters),
         };
       })
@@ -289,6 +291,9 @@ export class ViewerModel {
     const progress = this.motionProgress;
     const copy = await ViewerModel.load(pixi, this.source.clone(), onProgress);
     try {
+      for (const { label, data } of this.motions) {
+        if (data) copy.addCustomMotion(label, data);
+      }
       copy.motionChoice = motionChoice;
       copy.loopMotion = loopMotion;
       copy.effects.set(effects);
@@ -315,6 +320,114 @@ export class ViewerModel {
 
   valueAt(index) {
     return this.#values[index];
+  }
+
+  get editingMotion() {
+    return Boolean(this.#draftPose);
+  }
+
+  async readMotionData(index) {
+    const motion = this.motions[index];
+    if (!motion || this.cubism2) throw new ViewerError("motionEditorInvalid");
+    if (motion.data) return motion.data;
+    const url = this.display.internalModel.settings.resolveURL(motion.reference);
+    const response = await fetch(url);
+    if (!response.ok) throw new ViewerError("motionFailed");
+    const data = await response.json();
+    const definition = this.display.internalModel.motionManager.definitions[motion.group][motion.index];
+    const Meta = { ...data.Meta };
+    for (const key of ["FadeInTime", "FadeOutTime"]) {
+      if (Meta[key] === undefined && definition[key] > 0) Meta[key] = definition[key];
+    }
+    return { ...data, Meta };
+  }
+
+  compileDraftMotion(data) {
+    const manager = this.display.internalModel.motionManager;
+    const clip = manager.createMotion(data, "", {});
+    if (!this.#previewEntry) {
+      // Create the SDK's private queue entry without touching the playing motion.
+      const queue = new manager.queueManager.constructor();
+      queue.startMotion(clip, false, 0);
+      this.#previewEntry = new queue._motions[0].constructor();
+      queue.release();
+    }
+    return clip;
+  }
+
+  async loadDraftExpression(index) {
+    if (index < 0) return undefined;
+    const expression = await this.#expressionManager?.loadExpression(index);
+    if (!expression) throw new ViewerError("expressionFailed");
+    return expression;
+  }
+
+  beginDraftPreview() {
+    this.#draftPose = { values: this.#values.slice(), parts: this.#pose.readParts(), paused: this.paused };
+    this.paused = true;
+  }
+
+  previewDraftFrame(clip, time, expression) {
+    const { values, defaultValues } = this.#pose.parameters;
+    const saved = values.slice();
+    const virtual = this.#core._notExistParameterValues;
+    const savedVirtual = { ...virtual };
+    try {
+      values.set(defaultValues);
+      this.#pose.writeParts(this.#initialPartOpacities);
+      if (clip) {
+        for (const index of Object.keys(virtual)) virtual[index] = 0;
+        this.#sampleMotion(clip, time);
+        const pose = this.display.internalModel.pose;
+        if (pose) pose.updateParameters(this.#core, pose._fadeTimeSeconds);
+      }
+      const changes = [];
+      if (expression) {
+        const base = values.slice();
+        expression.doUpdateParameters(this.#core, 0, 1);
+        for (const parameter of this.parameters) {
+          const value = values[parameter.index];
+          if (Number.isFinite(value) && value !== base[parameter.index]) changes.push({ parameter, value });
+        }
+      }
+      this.#pose.update();
+      this.#values.set(values);
+      return changes;
+    } finally {
+      values.set(saved);
+      for (const index of Object.keys(virtual)) virtual[index] = savedVirtual[index] ?? 0;
+    }
+  }
+
+  endDraftPreview() {
+    const previous = this.#draftPose;
+    if (!previous) return;
+    this.#draftPose = undefined;
+    this.#values.set(previous.values);
+    this.#pose.writeParts(previous.parts);
+    this.#drawPose(this.#values);
+    this.paused = previous.paused;
+  }
+
+  addCustomMotion(label, data) {
+    const manager = this.display.internalModel.motionManager;
+    const clip = this.compileDraftMotion(data);
+    if (!this.#customMotionGroup) {
+      let group = "$custom-motion";
+      while (Object.hasOwn(manager.definitions, group)) group += "_";
+      this.#customMotionGroup = group;
+      manager.definitions[group] = [];
+      manager.motionGroups[group] = [];
+    }
+    const group = this.#customMotionGroup;
+    const index = manager.definitions[group].length;
+    const tracks = motion3Tracks(data.Curves, manager);
+    manager.definitions[group].push({ File: `${group}/${index}.motion3.json` });
+    manager.motionGroups[group].push(clip);
+    this.motions.push({ group, index, label, data, parameterIds: changedMotionParameterIds(tracks, this.parameters) });
+    for (const parameter of this.parameters) {
+      if (tracks.has(parameter.id)) parameter.motion = true;
+    }
   }
 
   setParameter(parameter, value) {
@@ -351,10 +464,14 @@ export class ViewerModel {
 
   #applyPose(expressionChanged = false) {
     if (!expressionChanged && this.#expressionFade) this.#finishExpressionFade();
+    this.#drawPose(expressionChanged ? this.#baseValues : this.#values, expressionChanged);
+  }
+
+  #drawPose(poseValues, expressionChanged = false) {
     const { values } = this.#pose.parameters;
     this.#animationValues.set(values);
     try {
-      values.set(expressionChanged ? this.#baseValues : this.#values);
+      values.set(poseValues);
       if (expressionChanged) {
         // Compose on the held frame so switching expressions never advances a paused motion.
         this.#applyExpression(values);
@@ -465,7 +582,7 @@ export class ViewerModel {
 
   get motionProgress() {
     const clip = this.#activeMotion;
-    if (!clip || this.loadingMotion || this.#activeMotionIndex !== this.motionChoice) return;
+    if (!clip || this.loadingMotion || this.editingMotion || this.#activeMotionIndex !== this.motionChoice) return;
     const duration = clip.getLoopDuration();
     const fps = clip._sourceFrameRate;
     const lastFrame = Math.max(1, Math.round(duration * fps));

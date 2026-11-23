@@ -31,12 +31,15 @@ python3 -m http.server 8765
 
 「参数」面板的循环开关后面显示当前动作帧。拖动进度条或输入帧号会暂停并预览该帧，点「继续」可从所选帧接着播放。帧号从 0 开始，范围取自动作的时长和帧率。
 
+Cubism 3+ 模型可从「动作和表情」打开「动作编辑」。可新建动作、从当前姿势起步，或选择来源动作编辑副本。拖动曲线上的关键帧可调整时间和数值，也可在指定帧输入数值后写入关键帧。选择表情可在时间轴上预览，点「将表情写入当前帧」可把混合结果写入曲线。动作可以导出为 `.motion3.json`，或临时加入当前模型的动作列表，刷新页面后清除。
+
 ## 结构
 
 - `src/local-model-source.js` 发现本地模型，通过模型文件的相对路径解析资源。
 - `src/resource-model-source.js` 读取 `resources/models.json`，用站点上的相对地址加载仓库模型。新增仓库样本时，将相对于 `resources` 的模型描述文件路径加到列表中。
 - `src/url-model-source.js` 加载链接指向的模型描述文件，并解析相对资源路径。
 - `src/live2d-model.js` 封装渲染适配器、单模型播放状态、姿势参数和快照。
+- `src/motion-draft.js` 读写可编辑动作和关键帧，`src/motion-editor.js` 连接曲线、播放和导出控件。
 - `src/cubism2.js` 连接 Cubism 2.1 的参数、表情混合和动作时间轴。
 - `src/model-effects.js` 管理各模型的基础效果，`src/basic-controls.js` 连接面板控件。
 - `src/scene.js` 管理共用画布上的模型位置、图层、选中和生命周期。

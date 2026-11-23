@@ -149,12 +149,12 @@ export class ParameterPanel {
   }
 
   syncPlayback() {
-    const canEdit = this.#model?.paused && !this.#model.loadingMotion;
+    const canEdit = this.#model?.paused && !this.#model.loadingMotion && !this.#model.editingMotion;
     this.hint.textContent = t(canEdit ? "editParameterHint" : "liveParameterHint");
     for (const { slider, number, reset } of this.#rows) {
       slider.disabled = !canEdit;
       number.readOnly = !canEdit;
-      reset.disabled = this.#model.loadingMotion || this.#model.loadingExpression;
+      reset.disabled = this.#model.loadingMotion || this.#model.loadingExpression || this.#model.editingMotion;
     }
     this.#filter();
   }

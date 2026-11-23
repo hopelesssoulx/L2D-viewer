@@ -423,7 +423,7 @@ body:has(.transform-window:not([hidden], [data-moved])) .animation-window:not([d
 }
 .animation-list option { padding: 3px 5px; border-radius: 5px; overflow: hidden; text-overflow: ellipsis; }
 .animation-list option:checked { background: var(--accent-wash) linear-gradient(var(--accent-wash), var(--accent-wash)); color: var(--accent); }
-.animation-playback { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.animation-playback { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
 .animation-loop {
   display: flex;
   align-items: center;
@@ -435,6 +435,31 @@ body:has(.transform-window:not([hidden], [data-moved])) .animation-window:not([d
 }
 .animation-loop span { min-width: 3em; }
 .animation-error { font-size: .84rem; overflow-wrap: anywhere; }
+.motion-editor {
+  left: 12px;
+  bottom: 12px;
+  width: min(930px, calc(100vw - 24px));
+  max-height: calc(100dvh - var(--toolbar-height) - 24px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  overflow: hidden;
+}
+.motion-editor .inspector-bar { justify-content: flex-start; }
+.motion-editor-model { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .85rem; }
+.motion-editor-content { display: grid; gap: 9px; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 10px 12px; }
+.motion-editor-row { display: flex; flex-wrap: wrap; align-items: end; gap: 6px 9px; min-width: 0; }
+.motion-editor-field { display: grid; gap: 3px; color: var(--muted); font-size: .8rem; min-width: 0; }
+.motion-editor-field :is(input, select), .motion-editor-transport input[type="number"] { width: 75px; min-height: 34px; padding: 4px 6px; }
+.motion-editor-wide { flex: 1 1 145px; }
+.motion-editor-wide :is(input, select) { width: 100%; }
+.motion-editor-row button { font-size: .84rem; }
+.motion-editor-graph { display: block; width: 100%; height: clamp(125px, 24dvh, 235px); background: var(--control); border-radius: 9px; touch-action: none; cursor: crosshair; }
+.motion-editor-transport { align-items: center; }
+.motion-editor-transport input[type="range"] { min-width: 55px; flex: 1; margin: 0; accent-color: var(--accent); }
+.motion-editor-transport output { max-width: 100%; font-size: .8rem; font-variant-numeric: tabular-nums; }
+.motion-editor-actions { align-items: center; }
+.motion-editor-actions p { min-width: 100px; flex: 1; font-size: .8rem; overflow-wrap: anywhere; }
 .inspector {
   top: calc(var(--toolbar-height) + 8px);
   right: 16px;

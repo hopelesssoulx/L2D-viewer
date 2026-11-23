@@ -5,6 +5,7 @@ import { setupFolderDrop } from "./folder-drop.js";
 import { getLanguage, setLanguage, t, translatePage, ViewerError } from "./i18n.js";
 import { discoverLocalModels } from "./local-model-source.js";
 import { ModelStrip } from "./model-strip.js";
+import { setupMotionEditor } from "./motion-editor.js";
 import { setupMotionProgress } from "./motion-progress.js";
 import { ModelScene } from "./scene.js";
 import { ParameterPanel } from "./parameter-panel.js";
@@ -30,6 +31,7 @@ const basicWindow = $("basic-window");
 const toggleBasic = $("toggle-basic");
 const animationWindow = $("animation-window");
 const toggleAnimation = $("toggle-animation");
+const editorWindow = $("motion-editor");
 const inspectorWindow = $("inspector");
 const toggleInspector = $("toggle-inspector");
 const transformWindow = $("transform-window");
@@ -68,6 +70,11 @@ const animation = new AnimationControls(
   animationWindow, $("motion-loop-template"), [...document.querySelectorAll("[data-loop-host]")],
   () => scene?.selected, syncPlayback
 );
+const motionEditor = setupMotionEditor(editorWindow, syncPlayback, () => {
+  animation.select();
+  panel.select(scene.selected);
+  syncPlayback();
+});
 const refreshMotionProgress = setupMotionProgress(
   $("inspector-motion-progress"), () => scene?.selected, syncPlayback
 );
@@ -150,13 +157,13 @@ function syncPlayback() {
   const model = scene.selected;
   animation.sync();
   refreshMotionProgress();
-  const busy = model?.loadingMotion || model?.loadingExpression;
+  const busy = model?.loadingMotion || model?.loadingExpression || model?.editingMotion;
   add.disabled = importURL.disabled = modelURL.disabled = loadingModels;
   resourceModels.disabled = loadingModels || resourceModels.options.length < 2;
   copy.disabled = loadingModels || !model || busy;
   remove.disabled = loadingModels || !model || busy;
   for (const button of playbackButtons) {
-    button.disabled = !model || model.loadingMotion;
+    button.disabled = !model || model.loadingMotion || model.editingMotion;
     button.textContent = t(model?.paused ? "resume" : "pause");
   }
   toggleBasic.disabled = toggleAnimation.disabled = toggleInspector.disabled = toggleTransform.disabled = !model;
@@ -168,7 +175,7 @@ function syncPlayback() {
   const { paused, loadingMotion, loadingExpression } = model;
   playbackState.textContent = t(loadingMotion ? "loadingMotion" : loadingExpression ? "loadingExpression" : paused ? "paused" : "updating");
   playbackState.dataset.paused = paused;
-  reset.disabled = importJSON.disabled = loadingMotion;
+  reset.disabled = importJSON.disabled = loadingMotion || model.editingMotion;
   panel.syncPlayback();
 }
 
@@ -193,6 +200,7 @@ function updateSelection() {
 
 function selectModel(model, openModelPanels = false) {
   const previous = scene.selected;
+  if (model !== previous) motionEditor.close();
   scene.select(model);
   updateSelection();
   if (model && (openModelPanels || !previous)) {
@@ -305,7 +313,7 @@ function setupPanelToggle(button, close, window, setOpen) {
 }
 
 const localizeToolbar = setupToolbar($("toolbar-dock"), toolbar, $("pin-toolbar"), $("reveal-toolbar"));
-const floatingPanels = [basicWindow, animationWindow, inspectorWindow, transformWindow];
+const floatingPanels = [basicWindow, animationWindow, inspectorWindow, transformWindow, editorWindow];
 function bringForward(panel) {
   for (const floatingPanel of floatingPanels) floatingPanel.toggleAttribute("data-front", panel === floatingPanel);
 }
@@ -313,7 +321,9 @@ const revealBasic = setupFloatingPanel(basicWindow, bringForward);
 const revealAnimation = setupFloatingPanel(animationWindow, bringForward);
 const revealInspector = setupFloatingPanel(inspectorWindow, bringForward);
 const revealTransform = setupFloatingPanel(transformWindow, bringForward);
+const revealEditor = setupFloatingPanel(editorWindow, bringForward);
 const localizeTheme = setupTheme($("theme-toggle"));
+$("theme-toggle").addEventListener("click", motionEditor.localize);
 new ResizeObserver(() => {
   if (!transformWindow.hidden) {
     document.documentElement.style.setProperty("--transform-height", `${transformWindow.offsetHeight}px`);
@@ -344,6 +354,20 @@ try {
 }
 
 if (scene) {
+  const editMotion = animationWindow.querySelector("[data-edit-motion]");
+  editMotion.addEventListener("click", () => {
+    const model = scene.selected;
+    if (!model || editMotion.disabled) return;
+    setAnimation(false);
+    motionEditor.open(model);
+    revealEditor();
+    editorWindow.querySelector("[data-editor-source]").focus({ preventScroll: true });
+  });
+  $("close-motion-editor").addEventListener("click", () => {
+    motionEditor.close();
+    setAnimation(true);
+    editMotion.focus({ preventScroll: true });
+  });
   const mouseControl = $("canvas-mouse");
   mouseControl.checked = false;
   mouseControl.addEventListener("change", () => scene.setMouseControls(mouseControl.checked));
@@ -426,6 +450,7 @@ function localizeViewer() {
   background.localize();
   animation.select();
   panel.localize();
+  motionEditor.localize();
   if (scene) {
     updateModelList();
     syncPlayback();

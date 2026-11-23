@@ -53,7 +53,7 @@ function* motion3Values(segments) {
   }
 }
 
-function motion3Tracks(curves, { eyeBlinkIds, lipSyncIds }) {
+export function motion3Tracks(curves, { eyeBlinkIds, lipSyncIds }) {
   const tracks = new Map();
   const effects = new Map();
   for (const curve of curves) {
