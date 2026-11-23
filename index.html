@@ -114,6 +114,12 @@
     <div class="basic-content">
       <div class="basic-effect">
         <label class="basic-toggle">
+          <span data-i18n="gazeFollow">视线跟随</span>
+          <input type="checkbox" class="toggle-switch" role="switch" data-effect="gazeFollow" autocomplete="off">
+        </label>
+      </div>
+      <div class="basic-effect">
+        <label class="basic-toggle">
           <span data-i18n="headSway">头部晃动</span>
           <input type="checkbox" class="toggle-switch" role="switch" data-effect="headSway" autocomplete="off">
         </label>
@@ -123,39 +129,42 @@
           <span data-i18n="physics">物理摆动</span>
           <input type="checkbox" class="toggle-switch" role="switch" data-effect="physics" autocomplete="off">
         </label>
-        <label class="basic-setting">
-          <span data-i18n="effectStrength">强度</span>
-          <input type="range" min="0" max="200" step="5" value="100" data-effect="physicsStrength" data-requires="physics" data-unit="%" aria-label="物理摆动强度" data-i18n-aria-label="physicsStrength">
-          <output>100%</output>
-        </label>
+        <div class="basic-setting">
+          <label for="basic-physics-strength" data-i18n="effectStrength">强度</label>
+          <input id="basic-physics-strength" type="range" min="0" max="200" step="5" value="100" data-effect="physicsStrength" data-requires="physics" data-unit="%" aria-label="物理摆动强度" data-i18n-aria-label="physicsStrength">
+          <output for="basic-physics-strength">100%</output>
+          <button type="button" class="parameter-reset" data-reset-effect="physicsStrength" title="恢复默认值" data-i18n-title="resetDefault" aria-label="重置物理摆动强度" data-i18n-aria-label="resetPhysicsStrength">
+            <svg aria-hidden="true"><use href="./assets/icons.svg#reset"></use></svg>
+          </button>
+        </div>
       </div>
       <div class="basic-effect">
         <label class="basic-toggle">
           <span data-i18n="breathing">自然呼吸</span>
           <input type="checkbox" class="toggle-switch" role="switch" data-effect="breathing" autocomplete="off">
         </label>
-        <label class="basic-setting">
-          <span data-i18n="effectStrength">强度</span>
-          <input type="range" min="0" max="200" step="5" value="100" data-effect="breathStrength" data-requires="breathing" data-unit="%" aria-label="自然呼吸强度" data-i18n-aria-label="breathStrength">
-          <output>100%</output>
-        </label>
+        <div class="basic-setting">
+          <label for="basic-breath-strength" data-i18n="effectStrength">强度</label>
+          <input id="basic-breath-strength" type="range" min="0" max="200" step="5" value="100" data-effect="breathStrength" data-requires="breathing" data-unit="%" aria-label="自然呼吸强度" data-i18n-aria-label="breathStrength">
+          <output for="basic-breath-strength">100%</output>
+          <button type="button" class="parameter-reset" data-reset-effect="breathStrength" title="恢复默认值" data-i18n-title="resetDefault" aria-label="重置自然呼吸强度" data-i18n-aria-label="resetBreathStrength">
+            <svg aria-hidden="true"><use href="./assets/icons.svg#reset"></use></svg>
+          </button>
+        </div>
       </div>
       <div class="basic-effect">
         <label class="basic-toggle">
           <span data-i18n="eyeBlink">自动眨眼</span>
           <input type="checkbox" class="toggle-switch" role="switch" data-effect="eyeBlink" autocomplete="off">
         </label>
-        <label class="basic-setting">
-          <span data-i18n="effectInterval">间隔</span>
-          <input type="range" min="1" max="10" step="0.5" value="4" data-effect="blinkInterval" data-requires="eyeBlink" data-unit=" s" aria-label="眨眼间隔（秒）" data-i18n-aria-label="blinkInterval">
-          <output>4 s</output>
-        </label>
-      </div>
-      <div class="basic-effect">
-        <label class="basic-toggle">
-          <span data-i18n="gazeFollow">视线跟随</span>
-          <input type="checkbox" class="toggle-switch" role="switch" data-effect="gazeFollow" autocomplete="off">
-        </label>
+        <div class="basic-setting">
+          <label for="basic-blink-interval" data-i18n="effectInterval">间隔</label>
+          <input id="basic-blink-interval" type="range" min="1" max="10" step="0.5" value="4" data-effect="blinkInterval" data-requires="eyeBlink" data-unit=" s" aria-label="眨眼间隔（秒）" data-i18n-aria-label="blinkInterval">
+          <output for="basic-blink-interval">4 s</output>
+          <button type="button" class="parameter-reset" data-reset-effect="blinkInterval" title="恢复默认值" data-i18n-title="resetDefault" aria-label="重置眨眼间隔" data-i18n-aria-label="resetBlinkInterval">
+            <svg aria-hidden="true"><use href="./assets/icons.svg#reset"></use></svg>
+          </button>
+        </div>
       </div>
     </div>
   </aside>

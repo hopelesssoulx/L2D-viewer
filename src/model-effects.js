@@ -129,5 +129,9 @@ export function setupModelEffects(internal, parameters, cubism2) {
     if (changes.gazeFollow === false) internal.focusController.focus(0, 0, true);
   }
 
-  return { settings, supported, set };
+  function reset(effect) {
+    set({ [effect]: defaults[effect] });
+  }
+
+  return { settings, supported, set, reset };
 }

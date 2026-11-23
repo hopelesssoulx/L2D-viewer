@@ -15,6 +15,7 @@ export function setupBasicControls(panel, getModel) {
         const value = String(settings[effect]);
         if (input.value !== value) input.value = value;
         input.parentElement.querySelector("output").value = value + unit;
+        input.parentElement.querySelector("[data-reset-effect]").disabled = !available;
       }
     }
   }
@@ -26,6 +27,14 @@ export function setupBasicControls(panel, getModel) {
     if (!effect || !model || input.disabled) return;
     const value = input.type === "checkbox" ? input.checked : input.valueAsNumber;
     model.effects.set({ [effect]: value });
+    refresh();
+  });
+
+  panel.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-reset-effect]");
+    const effects = getModel()?.effects;
+    if (!button || button.disabled || !effects) return;
+    effects.reset(button.dataset.resetEffect);
     refresh();
   });
 

@@ -363,14 +363,18 @@ button.primary:hover:not(:disabled) { background: var(--primary-hover); }
 .floating-panel .inspector-bar { cursor: grab; touch-action: none; user-select: none; }
 .floating-panel .inspector-bar:active { cursor: grabbing; }
 .basic-window {
-  left: 12px;
-  bottom: 12px;
+  --basic-bottom: 12px;
+  right: 12px;
+  bottom: var(--basic-bottom);
   width: min(282px, calc(100vw - 24px));
-  max-height: calc(100dvh - var(--toolbar-height) - 26px);
+  max-height: calc(100dvh - var(--toolbar-height) - var(--basic-bottom) - 14px);
   display: flex;
   flex-direction: column;
   border-radius: 18px;
   overflow: hidden;
+}
+body:has(.transform-window:not([hidden], [data-moved])) .basic-window:not([data-moved]) {
+  --basic-bottom: clamp(12px, calc(100dvh - var(--toolbar-height) - 160px), var(--transform-reserve));
 }
 .basic-content { padding: 2px 14px; overflow: auto; overscroll-behavior: contain; }
 .basic-effect { display: grid; gap: 7px; padding: 9px 0; }
@@ -378,7 +382,7 @@ button.primary:hover:not(:disabled) { background: var(--primary-hover); }
 .basic-toggle { display: flex; justify-content: space-between; align-items: center; gap: 8px; cursor: pointer; }
 .basic-setting {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) 43px;
+  grid-template-columns: auto minmax(0, 1fr) 43px auto;
   align-items: center;
   gap: 8px;
   color: var(--muted);
