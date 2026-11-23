@@ -38,7 +38,7 @@ const messages = {
   resetAll: ["重置全部参数", "Reset all"],
   findParameter: ["搜索参数 ID", "Search parameter IDs"],
   onlyUsedLabel: ["仅当前", "In use"],
-  onlyUsedParameters: ["仅显示当前动作或表情用到的参数", "Show only parameters used by the current motion or expression"],
+  onlyUsedParameters: ["仅显示当前动作或表情中会偏离默认值的参数", "Show only parameters that differ from default in the current motion or expression"],
   parameterGroup: ["参数组", "Parameter group"],
   allParameterGroups: ["全部参数组", "All groups"],
   ParamGroupFace: ["脸", "Face"],

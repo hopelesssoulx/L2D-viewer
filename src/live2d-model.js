@@ -4,7 +4,7 @@ import {
 import { t, ViewerError } from "./i18n.js";
 import { setupModelEffects } from "./model-effects.js";
 import { inferDisplayGroup, readParameterDisplayInfo } from "./parameter-display-info.js";
-import { readParameterGroups } from "./parameter-groups.js";
+import { changedMotionParameterIds, readParameterGroups } from "./parameter-groups.js";
 
 function prepareSettings(json, source, live2d) {
   const runtime = live2d.Live2DFactory.findRuntime(json);
@@ -161,8 +161,8 @@ export class ViewerModel {
         index,
         description: info?.description,
         displayGroup: info?.displayGroup ?? inferDisplayGroup(id),
-        motion: groups.motion.all.has(id) || !groups.expression.all.has(id),
-        expression: groups.expression.all.has(id),
+        motion: groups.motion.has(id) || !groups.expression.has(id),
+        expression: groups.expression.has(id),
         min: parameters.minimumValues[index],
         max: parameters.maximumValues[index],
         defaultValue: parameters.defaultValues[index],
@@ -178,14 +178,13 @@ export class ViewerModel {
         const name = reference.split(/[\\/]/).at(-1).replace(/\.(?:motion3\.json|mtn)$/i, "");
         return {
           group, index, label: group && group !== name ? `${group} / ${name}` : name,
-          parameterIds: groups.motion.byFile.get(reference),
+          parameterIds: changedMotionParameterIds(groups.motionTracks.get(reference), this.parameters),
         };
       })
     );
 
     this.#expressionManager = internal.motionManager.expressionManager;
     const expressionDefinitions = this.#expressionManager?.definitions ?? [];
-    this.#expressionParameterIds = expressionDefinitions.map(({ File, file }) => groups.expression.byFile.get(File ?? file));
     this.expressions = expressionDefinitions.map(({ Name, name, File, file }) =>
       (Name || name || (File ?? file).split(/[\\/]/).at(-1)).replace(/\.exp(?:3(?:\.json)?|\.json)$/i, "")
     );
@@ -375,6 +374,7 @@ export class ViewerModel {
     try {
       const expression = index < 0 ? undefined : await this.#expressionManager.loadExpression(index);
       if (index >= 0 && !expression) throw new ViewerError("expressionFailed");
+      this.#expressionParameterIds = expression ? this.#changedExpressionParameters(expression) : undefined;
       this.#expression = expression;
       this.expressionChoice = index;
       if (immediate || this.paused) {
@@ -387,6 +387,19 @@ export class ViewerModel {
       this.expressionError = error;
     } finally {
       this.loadingExpression = false;
+    }
+  }
+
+  #changedExpressionParameters(expression) {
+    const { values, defaultValues } = this.#pose.parameters;
+    const saved = values.slice();
+    try {
+      values.set(defaultValues);
+      expression.doUpdateParameters(this.#core, 0, 1);
+      return new Set(this.parameters.filter(({ index, defaultValue }) => values[index] !== defaultValue)
+        .map(({ id }) => id));
+    } finally {
+      values.set(saved);
     }
   }
 
@@ -446,7 +459,7 @@ export class ViewerModel {
   }
 
   usedParameterIds(category) {
-    if (category === "expression") return this.#expressionParameterIds[this.expressionChoice];
+    if (category === "expression") return this.#expressionParameterIds;
     return this.#activeMotion && this.motions[this.#activeMotionIndex]?.parameterIds;
   }
 
