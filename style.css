@@ -472,6 +472,7 @@ body:has(.transform-window:not([hidden], [data-moved])) .animation-window:not([d
 .parameter-toolbar span { flex: none; margin-inline-start: auto; font-size: .8rem; }
 .parameter-hint, .inline-message { margin-top: 7px; font-size: .8rem; overflow-wrap: anywhere; }
 .parameter-hint { margin-bottom: 7px; }
+.parameter-empty { font-size: .85rem; }
 .parameter-list { flex: 1; overflow: auto; padding: 0 4px; margin: 0 -4px; overscroll-behavior: contain; }
 .parameter-row { padding: 5px 0; border-bottom: 1px solid var(--line); }
 .parameter-header, .parameter-inputs { display: flex; align-items: center; justify-content: space-between; gap: 7px; }

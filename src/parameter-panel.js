@@ -9,12 +9,13 @@ export class ParameterPanel {
   #rows = [];
   #category = "motion";
 
-  constructor({ view, search, groupFilter, count, hint, list, onPlayback }) {
+  constructor({ view, search, groupFilter, count, hint, empty, list, onPlayback }) {
     this.view = view;
     this.search = search;
     this.groupFilter = groupFilter;
     this.count = count;
     this.hint = hint;
+    this.empty = empty;
     this.list = list;
     this.onPlayback = onPlayback;
     this.search.addEventListener("input", () => this.#filter());
@@ -129,6 +130,7 @@ export class ParameterPanel {
     }
     this.count.textContent = query ? `${matches} / ${count}`
       : t(matches === 1 ? "oneParameter" : "parameterCount", { count: matches });
+    this.empty.hidden = !this.#model || matches > 0;
     this.refreshValues();
   }
 

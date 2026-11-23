@@ -51,6 +51,25 @@ const displayGroups = new Map(Object.entries({
   ParamGroupClothes: "clothing",
 }));
 
+// Standard Cubism IDs and common variants for models without display groups.
+const parameterGroupPatterns = [
+  ["head", /^paramangle[xyz](?:(?:plus|minus)\d+)?$/],
+  ["eyes", /^parameye(?:[lr](?:open|smile|form|scale|highlight)\d*|ball(?:[xy]|form)|lid[lr]|form|scale|highlight)$/],
+  ["brows", /^parambrow(?:[lr](?:[xy]|angle|form)\d*|display[lr])$/],
+  ["mouth", /^parammouth(?:openy|form(?:y|\d+)?|scale)$/],
+  ["expression", /^paramcheek\d*$/],
+  ["body", /^param(?:bodyangle[xyz]|breath|shouldery|bust[xy]?|upperbody)$/],
+  ["arms", /^paramarm[lr](?:[a-z]?\d*|change|layer\d*|\d+contraction)$/],
+  ["hands", /^(?:param)?hand[lr](?:[a-z]?\d+)?(?:display)?$/],
+  ["hair", /^paramhair(?:front|side|back|fluffy|aho)[xy]?\d*$/],
+  ["clothing", /^param(?:(?:clothes|clothing|(?:black|gray|white)?skirt|collar|sleeve)[a-z0-9]*|tie)$/],
+];
+
+export function inferDisplayGroup(id) {
+  const normalized = id.replaceAll("_", "").toLowerCase();
+  return parameterGroupPatterns.find(([, pattern]) => pattern.test(normalized))?.[0] ?? "other";
+}
+
 export function describeParameter(id, modelDescription) {
   return modelDescription ?? standardDescriptions.get(id)?.[getLanguage() === "en" ? 1 : 0] ?? t("noParameterDescription");
 }
@@ -85,9 +104,10 @@ export async function readParameterDisplayInfo(source, reference) {
       if (!item || typeof item.Id !== "string") continue;
       const description = [item.Description, item.Name]
         .find((value) => typeof value === "string" && value.trim() && value.trim() !== item.Id);
+      const groupId = typeof item.GroupId === "string" ? item.GroupId.trim() : "";
       info.set(item.Id, {
         description: description?.trim(),
-        displayGroup: resolveDisplayGroup(item.GroupId, parents),
+        displayGroup: groupId ? resolveDisplayGroup(groupId, parents) : undefined,
       });
     }
   } catch {

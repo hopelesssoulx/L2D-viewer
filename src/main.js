@@ -56,6 +56,7 @@ const panel = new ParameterPanel({
   groupFilter: $("parameter-group"),
   count: $("parameter-count"),
   hint: $("parameter-hint"),
+  empty: $("parameter-empty"),
   list: $("parameter-list"),
   onPlayback: syncPlayback,
 });

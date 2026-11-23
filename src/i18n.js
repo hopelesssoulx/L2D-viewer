@@ -66,6 +66,7 @@ const messages = {
   resetDefault: ["恢复默认值", "Restore default value"],
   parameterCount: ["{count} 项", "{count} parameters"],
   oneParameter: ["{count} 项", "{count} parameter"],
+  noMatchingParameters: ["没有符合筛选条件的参数。", "No parameters match these filters."],
   editParameterHint: ["拖动滑块或输入数值调整当前姿势。", "Use the slider or enter a value to adjust the current pose."],
   liveParameterHint: ["播放时实时更新，暂停后可编辑。", "Values update during playback. Pause to edit."],
   noParameterDescription: ["模型未提供此参数的描述", "The model provides no description for this parameter"],

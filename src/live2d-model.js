@@ -3,7 +3,7 @@ import {
 } from "./cubism2.js";
 import { t, ViewerError } from "./i18n.js";
 import { setupModelEffects } from "./model-effects.js";
-import { readParameterDisplayInfo } from "./parameter-display-info.js";
+import { inferDisplayGroup, readParameterDisplayInfo } from "./parameter-display-info.js";
 import { readParameterGroups } from "./parameter-groups.js";
 
 function prepareSettings(json, source, live2d) {
@@ -159,7 +159,7 @@ export class ViewerModel {
         id,
         index,
         description: info?.description,
-        displayGroup: info?.displayGroup ?? "other",
+        displayGroup: info?.displayGroup ?? inferDisplayGroup(id),
         motion: groups.motion.has(id) || !groups.expression.has(id),
         expression: groups.expression.has(id),
         min: parameters.minimumValues[index],
