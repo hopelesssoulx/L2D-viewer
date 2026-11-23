@@ -45,6 +45,7 @@ const jsonInput = $("parameter-json");
 const jsonStatus = $("json-status");
 const exportJSON = $("export-json");
 const importJSON = $("import-json");
+const copyJSON = $("copy-json");
 
 let scene;
 let loadingModels = false;
@@ -379,10 +380,12 @@ if (scene) {
   showParameters.addEventListener("click", () => setPanel("motion"));
   showExpressionParameters.addEventListener("click", () => setPanel("expression"));
   showJSON.addEventListener("click", () => setPanel("snapshot"));
+  jsonInput.addEventListener("input", () => { copyJSON.disabled = !jsonInput.value; });
   exportJSON.addEventListener("click", () => {
     jsonInput.value = scene.selected.exportParameters();
-    jsonInput.focus();
-    jsonInput.select();
+    const end = jsonInput.value.length;
+    jsonInput.setSelectionRange(end, end);
+    copyJSON.disabled = false;
     setJSONStatus(() => t("jsonExported"));
   });
   importJSON.addEventListener("click", () => {
@@ -392,6 +395,14 @@ if (scene) {
       setJSONStatus(() => t("jsonApplied", { count }));
     } catch (error) {
       setJSONStatus(() => error.message, true);
+    }
+  });
+  copyJSON.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(jsonInput.value);
+      setJSONStatus(() => t("jsonCopied"));
+    } catch {
+      setJSONStatus(() => t("jsonCopyFailed"), true);
     }
   });
 

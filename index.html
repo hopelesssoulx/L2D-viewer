@@ -207,10 +207,8 @@
         <button id="show-parameters" type="button" aria-pressed="true" aria-controls="parameters-view" data-i18n="motionParameterTab" aria-label="动作参数" data-i18n-aria-label="motionParameters">动作参数</button>
         <button id="show-expression-parameters" type="button" aria-pressed="false" aria-controls="parameters-view" data-i18n="expressionParameterTab" aria-label="表情参数" data-i18n-aria-label="expressionParameters">表情参数</button>
         <button id="show-json" type="button" aria-pressed="false" aria-controls="json-view" data-i18n="snapshotTab" aria-label="JSON 快照" data-i18n-aria-label="snapshot">JSON 快照</button>
-        <div class="parameter-actions">
-          <button id="inspector-playback" type="button" disabled data-i18n="pause">暂停</button>
-          <button id="reset-parameters" type="button" data-i18n="resetAll">重置全部参数</button>
-        </div>
+        <button id="inspector-playback" type="button" disabled data-i18n="pause">暂停</button>
+        <button id="reset-parameters" type="button" data-i18n="resetAll">重置全部参数</button>
       </div>
       <section id="parameters-view" class="parameters-view" aria-label="实时参数" data-i18n-aria-label="liveParameters">
         <div class="parameter-toolbar">
@@ -226,11 +224,14 @@
         <div id="parameter-list" class="parameter-list"></div>
       </section>
       <section id="json-view" class="json-view" aria-label="JSON 快照" data-i18n-aria-label="snapshot" hidden>
-        <label for="parameter-json" data-i18n="parameterJSON">参数 JSON</label>
+        <label for="parameter-json" data-i18n="parameterJSON">当前参数</label>
         <textarea id="parameter-json" placeholder='{"ParamAngleX": 10}' spellcheck="false"></textarea>
         <div class="json-actions">
           <button id="export-json" type="button" data-i18n="exportJSON">导出当前参数</button>
-          <button id="import-json" type="button" class="primary" data-i18n="importJSON">导入 JSON</button>
+          <div class="json-import-actions">
+            <button id="import-json" type="button" class="primary" data-i18n="importJSON">导入参数</button>
+            <button id="copy-json" type="button" data-i18n="copyJSON" disabled>复制文本</button>
+          </div>
         </div>
         <p id="json-status" class="inline-message muted" role="status" data-i18n="jsonHint">粘贴参数 JSON 后导入，模型会暂停并应用数值。</p>
       </section>
