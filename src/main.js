@@ -1,4 +1,5 @@
 import { AnimationControls } from "./animation-controls.js";
+import { setupFolderDrop } from "./folder-drop.js";
 import { getLanguage, setLanguage, t, translatePage, ViewerError } from "./i18n.js";
 import { discoverLocalModels } from "./local-model-source.js";
 import { ModelStrip } from "./model-strip.js";
@@ -212,7 +213,7 @@ async function importModels(getSources, readingStatus) {
   const errors = [];
   let latest;
   try {
-    const sources = getSources();
+    const sources = await getSources();
     for (const [index, source] of sources.entries()) {
       reportLoad("loadingModel", {
         args: { name: source.name, current: index + 1, total: sources.length },
@@ -233,6 +234,10 @@ async function importModels(getSources, readingStatus) {
     else syncPlayback();
     reportLoad(errors.length ? "importFailures" : "", { errors });
   }
+}
+
+function importLocalFiles(getFiles) {
+  return importModels(async () => discoverLocalModels(await getFiles()), "loadingModels");
 }
 
 async function copySelected() {
@@ -316,10 +321,11 @@ if (scene) {
   mouseControl.addEventListener("change", () => scene.setMouseControls(mouseControl.checked));
   add.addEventListener("click", () => folder.click());
   folder.addEventListener("change", () => {
-    const files = Array.from(folder.files);
+    const files = Array.from(folder.files, (file) => [file.webkitRelativePath, file]);
     folder.value = "";
-    if (files.length) void importModels(() => discoverLocalModels(files), "loadingModels");
+    if (files.length) void importLocalFiles(() => files);
   });
+  setupFolderDrop($("folder-drop"), () => loadingModels, importLocalFiles);
   resourceModels.addEventListener("change", () => {
     const path = resourceModels.value;
     resourceModels.value = "";

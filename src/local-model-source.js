@@ -36,10 +36,10 @@ class LocalModelSource {
   #filesByPath;
   #urls = new Map();
 
-  constructor(file, filesByPath) {
-    this.file = file;
-    this.path = file.webkitRelativePath;
-    const name = file.name.replace(/(?:\.model3?)?\.json$/i, "");
+  constructor(path, filesByPath) {
+    this.file = filesByPath.get(path);
+    this.path = path;
+    const name = this.file.name.replace(/(?:\.model3?)?\.json$/i, "");
     this.name = name.toLowerCase() === "model" ? this.path.split("/").at(-2) : name;
     this.#filesByPath = filesByPath;
   }
@@ -53,7 +53,7 @@ class LocalModelSource {
   }
 
   clone() {
-    return new LocalModelSource(this.file, this.#filesByPath);
+    return new LocalModelSource(this.path, this.#filesByPath);
   }
 
   fileURL(reference) {
@@ -74,16 +74,11 @@ class LocalModelSource {
 }
 
 export function discoverLocalModels(files) {
-  const filesByPath = new Map();
-  for (const file of files) {
-    if (!file.webkitRelativePath) continue;
-    filesByPath.set(file.webkitRelativePath, file);
-  }
-
-  const models = [...filesByPath.values()]
-    .filter((file) => modelFile.test(file.name))
-    .sort((a, b) => a.webkitRelativePath.localeCompare(b.webkitRelativePath))
-    .map((file) => new LocalModelSource(file, filesByPath));
+  const filesByPath = new Map(files.filter(([path]) => path));
+  const models = [...filesByPath.keys()]
+    .filter((path) => modelFile.test(filesByPath.get(path).name))
+    .sort((a, b) => a.localeCompare(b))
+    .map((path) => new LocalModelSource(path, filesByPath));
 
   if (!models.length) {
     throw new ViewerError("noModelJSON");
