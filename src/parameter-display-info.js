@@ -30,44 +30,64 @@ const standardDescriptions = new Map(Object.entries({
   ParamHairBack: ["后发摆动", "Back hair sway"],
 }));
 
-const displayGroups = new Map(Object.entries({
-  ParamGroupFace: "head",
-  ParamGroupHead: "head",
-  ParamGroupEyes: "eyes",
-  ParamGroupEyeballs: "eyes",
-  ParamGroupBrows: "brows",
-  ParamGroupMouth: "mouth",
-  ParamGroupExpression: "expression",
-  ParamGroupBody: "body",
-  ParamGroupArms: "arms",
-  ParamGroupArmL: "arms",
-  ParamGroupArmR: "arms",
-  ParamGroupHands: "hands",
-  ParamGroupHandL: "hands",
-  ParamGroupHandR: "hands",
-  ParamGroupHair: "hair",
-  // Cubism has no recommended ID for clothing.
-  ParamGroupClothing: "clothing",
-  ParamGroupClothes: "clothing",
+export const standardParameterGroups = [
+  "ParamGroupFace",
+  "ParamGroupHead",
+  "ParamGroupEyes",
+  "ParamGroupEyeballs",
+  "ParamGroupBrows",
+  "ParamGroupMouth",
+  "ParamGroupBody",
+  "ParamGroupHands",
+  "ParamGroupHandL",
+  "ParamGroupHandR",
+  "ParamGroupArms",
+  "ParamGroupArmL",
+  "ParamGroupArmR",
+  "ParamGroupLegs",
+  "ParamGroupLegL",
+  "ParamGroupLegR",
+  "ParamGroupSway",
+  "ParamGroupExpression",
+  "ParamGroupHair",
+  "ParamGroupOverall",
+];
+
+const pairedGroups = new Map(Object.entries({
+  ParamGroupHands: ["ParamGroupHandL", "ParamGroupHandR"],
+  ParamGroupArms: ["ParamGroupArmL", "ParamGroupArmR"],
+  ParamGroupLegs: ["ParamGroupLegL", "ParamGroupLegR"],
 }));
 
 // Standard Cubism IDs and common variants for models without display groups.
+// The patterns for hands, arms, and legs capture the group ID's side suffix.
 const parameterGroupPatterns = [
-  ["head", /^paramangle[xyz](?:(?:plus|minus)\d+)?$/],
-  ["eyes", /^parameye(?:[lr](?:open|smile|form|scale|highlight)\d*|ball(?:[xy]|form)|lid[lr]|form|scale|highlight)$/],
-  ["brows", /^parambrow(?:[lr](?:[xy]|angle|form)\d*|display[lr])$/],
-  ["mouth", /^parammouth(?:openy|form(?:y|\d+)?|scale)$/],
-  ["expression", /^paramcheek\d*$/],
-  ["body", /^param(?:bodyangle[xyz]|breath|shouldery|bust[xy]?|upperbody)$/],
-  ["arms", /^paramarm[lr](?:[a-z]?\d*|change|layer\d*|\d+contraction)$/],
-  ["hands", /^(?:param)?hand[lr](?:[a-z]?\d+)?(?:display)?$/],
-  ["hair", /^paramhair(?:front|side|back|fluffy|aho)[xy]?\d*$/],
-  ["clothing", /^param(?:(?:clothes|clothing|(?:black|gray|white)?skirt|collar|sleeve)[a-z0-9]*|tie)$/],
+  ["ParamGroupHead", /^paramangle[xyz](?:(?:plus|minus)\d+)?$/],
+  ["ParamGroupEyes", /^parameye(?:[lr](?:open|smile|form|scale|highlight)\d*|lid[lr]|form|scale|highlight)$/],
+  ["ParamGroupEyeballs", /^param(?:eyeball(?:[xy]|form)|pupil)$/],
+  ["ParamGroupBrows", /^parambrow(?:[lr](?:[xy]|angle|form)\d*|display[lr])$/],
+  ["ParamGroupMouth", /^parammouth(?:openy|form(?:y|\d+)?|scale)$/],
+  ["ParamGroupBody", /^param(?:bodyangle[xyz]|breath|shouldery|upperbody)$/],
+  ["ParamGroupHand", /^(?:param)?hand([lr])(?:[a-z]?\d+)?(?:display)?$/],
+  ["ParamGroupArm", /^paramarm([lr])(?:[a-z]?\d*|change|layer\d*|\d+contraction)$/],
+  ["ParamGroupLeg", /^paramleg([lr])\d*$/],
+  ["ParamGroupSway", /^param(?:bust[xy]?|sway)$/],
+  ["ParamGroupExpression", /^paramcheek\d*$/],
+  ["ParamGroupHair", /^paramhair(?:front|side|back|fluffy|aho)[xy]?\d*$/],
+  ["ParamGroupOverall", /^param(?:base[xy]|position[xy]|rotationz|move(?:lr|ud)all|angle[xyz]all)$/],
 ];
 
 export function inferDisplayGroup(id) {
   const normalized = id.replaceAll("_", "").toLowerCase();
-  return parameterGroupPatterns.find(([, pattern]) => pattern.test(normalized))?.[0] ?? "other";
+  for (const [group, pattern] of parameterGroupPatterns) {
+    const match = pattern.exec(normalized);
+    if (match) return group + (match[1]?.toUpperCase() ?? "");
+  }
+  return "other";
+}
+
+export function matchesDisplayGroup(groupId, filter) {
+  return !filter || groupId === filter || pairedGroups.get(filter)?.includes(groupId) === true;
 }
 
 export function describeParameter(id, modelDescription) {
@@ -77,8 +97,7 @@ export function describeParameter(id, modelDescription) {
 function resolveDisplayGroup(groupId, parents) {
   const visited = new Set();
   while (groupId && !visited.has(groupId)) {
-    const group = displayGroups.get(groupId);
-    if (group) return group;
+    if (standardParameterGroups.includes(groupId)) return groupId;
     visited.add(groupId);
     groupId = parents.get(groupId);
   }

@@ -1,5 +1,5 @@
 import { t } from "./i18n.js";
-import { describeParameter } from "./parameter-display-info.js";
+import { describeParameter, matchesDisplayGroup, standardParameterGroups } from "./parameter-display-info.js";
 
 const formatValue = (value) => String(Number(value.toFixed(5)));
 const svgNamespace = "http://www.w3.org/2000/svg";
@@ -18,6 +18,12 @@ export class ParameterPanel {
     this.empty = empty;
     this.list = list;
     this.onPlayback = onPlayback;
+    const otherGroup = this.groupFilter.querySelector('option[value="other"]');
+    for (const id of standardParameterGroups) {
+      const option = new Option(t(id), id);
+      option.dataset.i18n = id;
+      otherGroup.before(option);
+    }
     this.search.addEventListener("input", () => this.#filter());
     this.groupFilter.addEventListener("change", () => {
       this.list.scrollTop = 0;
@@ -122,7 +128,7 @@ export class ParameterPanel {
     let count = 0;
     let matches = 0;
     for (const entry of this.#rows) {
-      const inScope = entry.parameter[this.#category] && (!group || entry.parameter.displayGroup === group);
+      const inScope = entry.parameter[this.#category] && matchesDisplayGroup(entry.parameter.displayGroup, group);
       if (inScope) count++;
       entry.matches = inScope && entry.filterKey.includes(query);
       entry.row.hidden = !entry.matches;
