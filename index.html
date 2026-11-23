@@ -39,6 +39,7 @@
         <select id="resource-models" class="resource-models" aria-label="仓库模型" data-i18n-aria-label="resourceModels" autocomplete="off" disabled>
           <option value="" data-i18n="resourceModels">仓库模型</option>
         </select>
+        <button id="import-url" type="button" popovertarget="model-url-popover" aria-label="从链接导入模型" data-i18n-aria-label="importURL" data-i18n="urlShort" disabled>链接</button>
         <div class="model-actions">
           <button id="toggle-playback" type="button" disabled data-i18n="pause" hidden>暂停</button>
           <button id="copy-model" type="button" aria-label="复制选中的模型" data-i18n-aria-label="copyModel" disabled data-i18n="copy">复制</button>
@@ -81,6 +82,15 @@
       <span data-motion-loop-status></span>
     </label>
   </template>
+
+  <section id="model-url-popover" class="tool-popover glass" popover="auto" aria-labelledby="model-url-heading">
+    <h2 id="model-url-heading" data-i18n="importURL">从链接导入模型</h2>
+    <form id="model-url-form" class="model-url-form">
+      <input id="model-url" type="url" aria-label="模型 JSON 链接" data-i18n-aria-label="modelURL" aria-describedby="model-url-hint" placeholder="https://…/model.model3.json" autocomplete="off" spellcheck="false" required autofocus>
+      <button type="submit" class="primary" data-i18n="addFromURL">导入</button>
+    </form>
+    <p id="model-url-hint" class="inline-message muted" data-i18n="modelURLHint">输入模型描述文件的直链。跨站链接需要支持 CORS。</p>
+  </section>
 
   <section id="background-popover" class="tool-popover glass" popover="auto" aria-labelledby="background-heading">
     <h2 id="background-heading" data-i18n="canvasBackground">画布背景</h2>

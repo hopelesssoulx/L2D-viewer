@@ -6,14 +6,16 @@ import { ModelStrip } from "./model-strip.js";
 import { setupMotionProgress } from "./motion-progress.js";
 import { ModelScene } from "./scene.js";
 import { ParameterPanel } from "./parameter-panel.js";
-import { readResourceCatalog, resourceModelName, ResourceModelSource } from "./resource-model-source.js";
+import { readResourceCatalog, resourceModelName, resourceModelSource } from "./resource-model-source.js";
 import { setupTransformControls } from "./transform-controls.js";
+import { URLModelSource } from "./url-model-source.js";
 import { setupBackground, setupFloatingPanel, setupTheme, setupToolbar } from "./workspace-controls.js";
 
 const $ = (id) => document.getElementById(id);
 
 const add = $("add-models");
 const resourceModels = $("resource-models");
+const importURL = $("import-url");
 const folder = $("folder-input");
 const toolbar = $("toolbar");
 const stage = $("stage");
@@ -129,7 +131,7 @@ function syncPlayback() {
   animation.sync();
   refreshMotionProgress();
   const busy = model?.loadingMotion || model?.loadingExpression;
-  add.disabled = loadingModels;
+  add.disabled = importURL.disabled = loadingModels;
   resourceModels.disabled = loadingModels || resourceModels.options.length < 2;
   copy.disabled = loadingModels || !model || busy;
   remove.disabled = loadingModels || !model || busy;
@@ -329,7 +331,13 @@ if (scene) {
   resourceModels.addEventListener("change", () => {
     const path = resourceModels.value;
     resourceModels.value = "";
-    if (path) void importModels(() => [new ResourceModelSource(path)]);
+    if (path) void importModels(() => [resourceModelSource(path)]);
+  });
+  $("model-url-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const address = $("model-url").value;
+    $("model-url-popover").hidePopover();
+    void importModels(() => [new URLModelSource(address)]);
   });
   void populateResourceModels();
   for (const button of playbackButtons) {

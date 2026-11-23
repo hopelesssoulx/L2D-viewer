@@ -325,6 +325,8 @@ button.primary:hover:not(:disabled) { background: var(--primary-hover); }
   overscroll-behavior: contain;
 }
 .tool-popover h2 { margin-bottom: 10px; font-size: 1rem; font-weight: 650; }
+.model-url-form { display: flex; gap: 6px; }
+.model-url-form input { flex: 1; padding: 5px 8px; }
 .json-actions { display: flex; gap: 8px; }
 .background-swatches { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
 .background-swatches button {
