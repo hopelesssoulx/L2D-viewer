@@ -53,6 +53,7 @@ let renderJSONStatus = () => {};
 const panel = new ParameterPanel({
   view: $("parameters-view"),
   search: $("parameter-search"),
+  groupFilter: $("parameter-group"),
   count: $("parameter-count"),
   hint: $("parameter-hint"),
   list: $("parameter-list"),

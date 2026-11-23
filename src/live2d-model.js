@@ -3,7 +3,7 @@ import {
 } from "./cubism2.js";
 import { t, ViewerError } from "./i18n.js";
 import { setupModelEffects } from "./model-effects.js";
-import { readParameterDescriptions } from "./parameter-descriptions.js";
+import { readParameterDisplayInfo } from "./parameter-display-info.js";
 import { readParameterGroups } from "./parameter-groups.js";
 
 function prepareSettings(json, source, live2d) {
@@ -78,7 +78,7 @@ export class ViewerModel {
       const modelJSON = await source.readSettings();
       const settings = prepareSettings(modelJSON, source, live2d);
       const cubism2 = settings instanceof live2d.Cubism2ModelSettings;
-      const descriptions = readParameterDescriptions(source, modelJSON.FileReferences?.DisplayInfo);
+      const displayInfo = readParameterDisplayInfo(source, modelJSON.FileReferences?.DisplayInfo);
       const groups = readParameterGroups(settings, cubism2);
       textureURLs = settings.textures.map((reference) => settings.resolveURL(reference));
       // Model loading has three milestones: settings, textures, and scene attachment.
@@ -97,7 +97,7 @@ export class ViewerModel {
       display.on("physicsLoadError", () => failedOptionals.push(settings.physics));
       await live2d.Live2DFactory.setupLive2DModel(display, settings, options);
       if (failedOptionals.length) throw new ViewerError("unreadableModelFiles", { paths: failedOptionals.join(", ") });
-      return new ViewerModel(display, source, live2d, cubism2, await descriptions, await groups);
+      return new ViewerModel(display, source, live2d, cubism2, await displayInfo, await groups);
     } catch (error) {
       try {
         if (display.internalModel) display.destroy();
@@ -127,7 +127,7 @@ export class ViewerModel {
   #expressionLayers = new Map();
   #blendedValues;
 
-  constructor(display, source, live2d, cubism2, descriptions, groups) {
+  constructor(display, source, live2d, cubism2, displayInfo, groups) {
     this.display = display;
     this.source = source;
     this.cubism2 = cubism2;
@@ -153,16 +153,20 @@ export class ViewerModel {
     const { parameters } = this.#pose;
     this.effects = setupModelEffects(internal, parameters, cubism2);
     this.#initialPartOpacities = this.#pose.readParts();
-    this.parameters = Array.from(parameters.ids, (id, index) => ({
-      id,
-      index,
-      description: descriptions.get(id),
-      motion: groups.motion.has(id) || !groups.expression.has(id),
-      expression: groups.expression.has(id),
-      min: parameters.minimumValues[index],
-      max: parameters.maximumValues[index],
-      defaultValue: parameters.defaultValues[index],
-    }));
+    this.parameters = Array.from(parameters.ids, (id, index) => {
+      const info = displayInfo.get(id);
+      return {
+        id,
+        index,
+        description: info?.description,
+        displayGroup: info?.displayGroup ?? "other",
+        motion: groups.motion.has(id) || !groups.expression.has(id),
+        expression: groups.expression.has(id),
+        min: parameters.minimumValues[index],
+        max: parameters.maximumValues[index],
+        defaultValue: parameters.defaultValues[index],
+      };
+    });
     this.#values = Float32Array.from(parameters.values);
     this.#baseValues = this.#values.slice();
     this.#animationValues = new Float32Array(parameters.count);

@@ -467,8 +467,9 @@ body:has(.transform-window:not([hidden], [data-moved])) .animation-window:not([d
 .parameter-actions { display: flex; gap: 5px; margin-inline-start: auto; }
 .parameters-view, .json-view { flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 12px 14px; }
 .parameter-toolbar { display: flex; align-items: center; gap: 9px; }
-.parameter-toolbar input { flex: 1; width: 100%; padding: 6px 9px; }
-.parameter-toolbar span { flex: none; font-size: .8rem; }
+.parameter-toolbar input { flex: 1; padding: 6px 9px; }
+.parameter-toolbar select { padding: 6px; }
+.parameter-toolbar span { flex: none; margin-inline-start: auto; font-size: .8rem; }
 .parameter-hint, .inline-message { margin-top: 7px; font-size: .8rem; overflow-wrap: anywhere; }
 .parameter-hint { margin-bottom: 7px; }
 .parameter-list { flex: 1; overflow: auto; padding: 0 4px; margin: 0 -4px; overscroll-behavior: contain; }
@@ -645,6 +646,8 @@ input.toggle-switch:disabled { opacity: .55; cursor: default; }
 }
 
 @media (max-width: 360px) {
+  .parameter-toolbar { flex-wrap: wrap; gap: 6px 9px; }
+  .parameter-toolbar input { flex-basis: 100%; }
   .tool-row { gap: 1px; }
   .tool-row button { padding-inline: 2px; }
   .model-actions, .view-actions { gap: 1px; }

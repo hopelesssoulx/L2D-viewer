@@ -30,27 +30,68 @@ const standardDescriptions = new Map(Object.entries({
   ParamHairBack: ["后发摆动", "Back hair sway"],
 }));
 
+const displayGroups = new Map(Object.entries({
+  ParamGroupFace: "head",
+  ParamGroupHead: "head",
+  ParamGroupEyes: "eyes",
+  ParamGroupEyeballs: "eyes",
+  ParamGroupBrows: "brows",
+  ParamGroupMouth: "mouth",
+  ParamGroupExpression: "expression",
+  ParamGroupBody: "body",
+  ParamGroupArms: "arms",
+  ParamGroupArmL: "arms",
+  ParamGroupArmR: "arms",
+  ParamGroupHands: "hands",
+  ParamGroupHandL: "hands",
+  ParamGroupHandR: "hands",
+  ParamGroupHair: "hair",
+  // Cubism has no recommended ID for clothing.
+  ParamGroupClothing: "clothing",
+  ParamGroupClothes: "clothing",
+}));
+
 export function describeParameter(id, modelDescription) {
   return modelDescription ?? standardDescriptions.get(id)?.[getLanguage() === "en" ? 1 : 0] ?? t("noParameterDescription");
 }
 
-export async function readParameterDescriptions(source, reference) {
-  const descriptions = new Map();
-  if (typeof reference !== "string" || !reference) return descriptions;
+function resolveDisplayGroup(groupId, parents) {
+  const visited = new Set();
+  while (groupId && !visited.has(groupId)) {
+    const group = displayGroups.get(groupId);
+    if (group) return group;
+    visited.add(groupId);
+    groupId = parents.get(groupId);
+  }
+  return "other";
+}
+
+export async function readParameterDisplayInfo(source, reference) {
+  const info = new Map();
+  if (typeof reference !== "string" || !reference) return info;
 
   try {
     const response = await fetch(source.fileURL(reference));
-    if (!response.ok) return descriptions;
-    const { Parameters } = await response.json();
-    if (!Array.isArray(Parameters)) return descriptions;
+    if (!response.ok) return info;
+    const { Parameters, ParameterGroups } = await response.json();
+    if (!Array.isArray(Parameters)) return info;
+
+    const parents = new Map();
+    for (const group of Array.isArray(ParameterGroups) ? ParameterGroups : []) {
+      if (typeof group?.Id === "string") parents.set(group.Id, group.GroupId);
+    }
+
     for (const item of Parameters) {
       if (!item || typeof item.Id !== "string") continue;
       const description = [item.Description, item.Name]
         .find((value) => typeof value === "string" && value.trim() && value.trim() !== item.Id);
-      if (description) descriptions.set(item.Id, description.trim());
+      info.set(item.Id, {
+        description: description?.trim(),
+        displayGroup: resolveDisplayGroup(item.GroupId, parents),
+      });
     }
   } catch {
     // Display information is optional.
   }
-  return descriptions;
+  return info;
 }

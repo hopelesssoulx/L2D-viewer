@@ -1,5 +1,5 @@
 import { t } from "./i18n.js";
-import { describeParameter } from "./parameter-descriptions.js";
+import { describeParameter } from "./parameter-display-info.js";
 
 const formatValue = (value) => String(Number(value.toFixed(5)));
 const svgNamespace = "http://www.w3.org/2000/svg";
@@ -9,19 +9,25 @@ export class ParameterPanel {
   #rows = [];
   #category = "motion";
 
-  constructor({ view, search, count, hint, list, onPlayback }) {
+  constructor({ view, search, groupFilter, count, hint, list, onPlayback }) {
     this.view = view;
     this.search = search;
+    this.groupFilter = groupFilter;
     this.count = count;
     this.hint = hint;
     this.list = list;
     this.onPlayback = onPlayback;
     this.search.addEventListener("input", () => this.#filter());
+    this.groupFilter.addEventListener("change", () => {
+      this.list.scrollTop = 0;
+      this.#filter();
+    });
   }
 
   select(model) {
     this.#model = model;
     this.search.value = "";
+    this.groupFilter.value = "";
     this.#rows = (model?.parameters ?? []).map((parameter) => this.#createRow(model, parameter));
     this.list.replaceChildren(...this.#rows.map(({ row }) => row));
     this.list.scrollTop = 0;
@@ -111,12 +117,13 @@ export class ParameterPanel {
 
   #filter() {
     const query = this.search.value.trim().toLowerCase();
+    const group = this.groupFilter.value;
     let count = 0;
     let matches = 0;
     for (const entry of this.#rows) {
-      const inCategory = entry.parameter[this.#category];
-      if (inCategory) count++;
-      entry.matches = inCategory && entry.filterKey.includes(query);
+      const inScope = entry.parameter[this.#category] && (!group || entry.parameter.displayGroup === group);
+      if (inScope) count++;
+      entry.matches = inScope && entry.filterKey.includes(query);
       entry.row.hidden = !entry.matches;
       if (entry.matches) matches++;
     }

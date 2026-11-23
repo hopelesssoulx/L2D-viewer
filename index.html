@@ -215,6 +215,20 @@
       <section id="parameters-view" class="parameters-view" aria-label="实时参数" data-i18n-aria-label="liveParameters">
         <div class="parameter-toolbar">
           <input id="parameter-search" type="search" placeholder="搜索参数 ID" data-i18n-placeholder="findParameter" aria-label="搜索参数 ID" data-i18n-aria-label="findParameter">
+          <select id="parameter-group" aria-label="参数部位" data-i18n-aria-label="parameterGroup">
+            <option value="" data-i18n="allParameterGroups">全部部位</option>
+            <option value="head" data-i18n="parameterGroupHead">头部</option>
+            <option value="eyes" data-i18n="parameterGroupEyes">眼睛</option>
+            <option value="brows" data-i18n="parameterGroupBrows">眉毛</option>
+            <option value="mouth" data-i18n="parameterGroupMouth">嘴</option>
+            <option value="expression" data-i18n="parameterGroupExpression">表情</option>
+            <option value="body" data-i18n="parameterGroupBody">身体</option>
+            <option value="arms" data-i18n="parameterGroupArms">手臂</option>
+            <option value="hands" data-i18n="parameterGroupHands">手</option>
+            <option value="hair" data-i18n="parameterGroupHair">头发</option>
+            <option value="clothing" data-i18n="parameterGroupClothing">服装</option>
+            <option value="other" data-i18n="parameterGroupOther">其他</option>
+          </select>
           <span id="parameter-count" class="muted"></span>
         </div>
         <p id="parameter-hint" class="parameter-hint muted"></p>
