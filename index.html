@@ -129,9 +129,13 @@
         </label>
       </div>
       <div class="basic-effect">
+        <label class="basic-toggle">
+          <span data-i18n="headSway">头部晃动</span>
+          <input type="checkbox" class="toggle-switch" role="switch" data-effect="headSway" autocomplete="off">
+        </label>
         <div class="basic-setting">
-          <label for="basic-head-sway-strength" data-i18n="headSway">头部晃动</label>
-          <input id="basic-head-sway-strength" type="range" min="0" max="200" step="5" value="100" data-effect="headSwayStrength" data-unit="%" aria-label="头部晃动强度" data-i18n-aria-label="headSwayStrength">
+          <label for="basic-head-sway-strength" data-i18n="effectStrength">强度</label>
+          <input id="basic-head-sway-strength" type="range" min="0" max="200" step="5" value="100" data-effect="headSwayStrength" data-requires="headSway" data-unit="%" aria-label="头部晃动强度" data-i18n-aria-label="headSwayStrength">
           <output for="basic-head-sway-strength">100%</output>
           <button type="button" class="parameter-reset" data-reset-effect="headSwayStrength" title="恢复默认值" data-i18n-title="resetDefault" aria-label="重置头部晃动强度" data-i18n-aria-label="resetHeadSwayStrength">
             <svg aria-hidden="true"><use href="./assets/icons.svg#reset"></use></svg>

@@ -1,4 +1,5 @@
 const defaults = {
+  headSway: true,
   headSwayStrength: 100,
   physics: true,
   physicsStrength: 100,
@@ -17,7 +18,7 @@ function setupNaturalMovements(internal, parameters, swayIndices, breathIndex, s
   const update = internal.updateNaturalMovements.bind(internal);
   const beforeSway = new Float32Array(swayIndices.length);
   internal.updateNaturalMovements = (delta, now) => {
-    const swayWeight = settings.headSwayStrength / 100;
+    const swayWeight = settings.headSway ? settings.headSwayStrength / 100 : 0;
     const breathWeight = settings.breathing ? settings.breathStrength / 100 : 0;
     const values = parameters.values;
     const beforeBreath = values[breathIndex];
@@ -104,7 +105,7 @@ export function setupModelEffects(internal, parameters, cubism2) {
   const blink = internal.eyeBlink;
   const blinkIds = cubism2 ? ["PARAM_EYE_L_OPEN", "PARAM_EYE_R_OPEN"] : blink?.getParameterIds() ?? [];
   const supported = {
-    headSwayStrength: swayIndices.length > 0,
+    headSway: swayIndices.length > 0,
     physics: Boolean(internal.physics),
     breathing: breathIndex >= 0,
     eyeBlink: Boolean(blink && blinkIds.some((id) => ids.includes(id))),
