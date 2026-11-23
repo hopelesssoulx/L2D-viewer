@@ -109,7 +109,7 @@ export function setupModelEffects(internal, parameters, cubism2) {
     physics: Boolean(internal.physics),
     breathing: breathIndex >= 0,
     eyeBlink: Boolean(blink && blinkIds.some((id) => ids.includes(id))),
-    gazeFollow: eyeX >= 0 || eyeY >= 0,
+    gazeFollow: eyeX >= 0 || eyeY >= 0 || swayIndices.length > 0,
   };
 
   setupNaturalMovements(internal, parameters, swayIndices, breathIndex, settings);
@@ -117,12 +117,10 @@ export function setupModelEffects(internal, parameters, cubism2) {
   if (supported.eyeBlink && cubism2) fixLegacyBlink(blink);
   if (!supported.eyeBlink) internal.eyeBlink = undefined;
 
+  // The adapter already uses the Web sample's eye, head, and body coefficients.
+  const updateFocus = internal.updateFocus.bind(internal);
   internal.updateFocus = () => {
-    if (!settings.gazeFollow) return;
-    const { x, y } = internal.focusController;
-    const { values } = parameters;
-    if (eyeX >= 0) values[eyeX] = clampParameter(parameters, eyeX, values[eyeX] + x);
-    if (eyeY >= 0) values[eyeY] = clampParameter(parameters, eyeY, values[eyeY] + y);
+    if (settings.gazeFollow) updateFocus();
   };
 
   function set(changes) {
